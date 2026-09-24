@@ -840,11 +840,12 @@ html[data-theme="dark"] ::-webkit-scrollbar-thumb{background:linear-gradient(90d
   <section class="page" id="p_knihovna">
     <div class="card"><h2>Knihovna receptů
         <button class="addbtn" id="lib_save" type="button" title="Uložit aktuální recept">💾<span class="lbl">Uložit aktuální</span></button></h2>
-      <div style="color:var(--muted);font-size:13px">Ulož si rozdělaný recept a kdykoli se k němu vrať. Recepty se ukládají do tohoto prohlížeče. Tlačítkem <b>Exportovat</b> u receptu vytvoříš soubor <span class="mono">.pivo</span> (recept i s etiketou) k poslání; <b>Importovat</b> načte <span class="mono">.pivo</span> od někoho jiného.</div>
+      <div style="color:var(--muted);font-size:13px">Ulož si rozdělaný recept a kdykoli se k němu vrať. Recepty se ukládají do tohoto prohlížeče. <b>Exportovat</b> vytvoří soubor <span class="mono">.pivo</span> s receptem (i s etiketou), <b>Exportovat celou knihovnu</b> uloží všechny recepty a etikety najednou – třeba pro přenos mezi počítačem a telefonem. <b>Importovat</b> načte obojí.</div>
       <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn" id="lib_export_cur" type="button" style="border-color:var(--accent);color:var(--accent)">Exportovat aktuální recept</button>
-        <button class="btn" id="lib_import" type="button" style="border-color:var(--accent);color:var(--accent)">Importovat recept…</button>
+        <button class="btn" id="lib_import" type="button" style="border-color:var(--accent);color:var(--accent)" title="Načte recept nebo celou knihovnu ze souboru .pivo">Importovat…</button>
         <button class="btn" id="lib_saveas" type="button">Uložit jako kopii…</button>
+        <button class="btn" id="lib_export_all" type="button" style="border-color:var(--accent);color:var(--accent)" title="Všechny recepty i všechny etikety do jednoho souboru .pivo">Exportovat celou knihovnu</button>
       </div>
       <input type="file" id="lib_import_file" accept=".pivo,text/plain,application/octet-stream" style="display:none">
       <div id="lib_msg" style="color:var(--hop);font-size:12.5px;margin-top:10px"></div>
@@ -1591,8 +1592,30 @@ const EMBEDDED_RECIPES=[];
 let EMBEDDED_LABELS=[];
 // mobilní verze: knihovna etiket z desktopu se dotahuje až po spuštění (labels.json)
 setTimeout(()=>fetch('labels.json').then(r=>r.ok?r.json():[]).then(a=>{if(Array.isArray(a)&&a.length){EMBEDDED_LABELS=a;try{renderLabelLibrary();}catch(e){}}}).catch(()=>{}),1500);
+// ---------- úložiště knihovny: IndexedDB (stovky MB – etikety se vejdou i v iPhonu), localStorage jen jako záloha (~5 MB) ----------
+// Knihovna se drží v paměti (LIB_MEM), zápis jde do IndexedDB; starší data z localStorage se při startu jednou převedou.
+const LIB_MEM={};let LIB_DB=null;
+const hasOwn=(o,k)=>Object.prototype.hasOwnProperty.call(o,k);
+function kvGet(k){if(hasOwn(LIB_MEM,k))return LIB_MEM[k];try{return localStorage.getItem(k);}catch(e){return null;}}
+function kvSet(k,v){LIB_MEM[k]=v;if(LIB_DB){idbWrite(k,v);return true;}try{localStorage.setItem(k,v);return true;}catch(e){return false;}}
+function idbWrite(k,v){try{const tx=LIB_DB.transaction('kv','readwrite');tx.objectStore('kv').put(v,k);
+  tx.oncomplete=()=>{try{localStorage.removeItem(k);}catch(e){}};
+  tx.onerror=tx.onabort=()=>{const m=$('lib_msg');if(m){m.style.color='var(--bad)';m.textContent='⚠ Knihovnu se nepodařilo uložit – v zařízení došlo místo.';}};}catch(e){}}
+(function libStorageInit(){let req;try{if(!window.indexedDB)return;req=indexedDB.open('pivni-planovac',1);}catch(e){return;}
+  req.onupgradeneeded=()=>req.result.createObjectStore('kv');
+  req.onsuccess=()=>{const db=req.result,keys=['pivo_recipes_v1','pivo_labels_v1'],got={};
+    let tx;try{tx=db.transaction('kv','readonly');}catch(e){return;}
+    keys.forEach(k=>{const g=tx.objectStore('kv').get(k);g.onsuccess=()=>{got[k]=g.result;};});
+    tx.oncomplete=()=>{LIB_DB=db;let changed=false;
+      keys.forEach(k=>{
+        if(hasOwn(LIB_MEM,k)){idbWrite(k,LIB_MEM[k]);return;}          // uloženo už během startu → to je nejnovější
+        if(got[k]!=null){LIB_MEM[k]=got[k];changed=true;return;}
+        let ls=null;try{ls=localStorage.getItem(k);}catch(e){}
+        if(ls!=null){LIB_MEM[k]=ls;idbWrite(k,ls);}                    // převod starších dat z localStorage
+      });
+      if(changed){try{renderLibrary();renderLabelLibrary();}catch(e){}}};};})();
 const RKEY='pivo_recipes_v1';
-function readLibraryOverlay(key){try{var raw=JSON.parse(localStorage.getItem(key));
+function readLibraryOverlay(key){try{var raw=JSON.parse(kvGet(key));
   if(Array.isArray(raw))return {items:raw,hidden:[]};
   if(raw&&Array.isArray(raw.items))return {items:raw.items,hidden:Array.isArray(raw.hidden)?raw.hidden:[]};
   return {items:[],hidden:[]};}catch(e){return {items:[],hidden:[]};}}
@@ -1613,7 +1636,7 @@ function saveRecipes(a){try{var bases=new Map(EMBEDDED_RECIPES.map(x=>[x._embedd
     if(id&&bases.has(id)){present.add(id);var bare=stripRecipeMeta(r);if(recipeComparable(bare)!==baseCanon(bases.get(id),recipeComparable)){changed.add(id);items.push(bare);}}
     else items.push(stripRecipeMeta(r||{}));});
   var hidden=EMBEDDED_RECIPES.map(x=>x._embeddedId).filter(id=>!present.has(id)||changed.has(id));
-  localStorage.setItem(RKEY,JSON.stringify({items:items,hidden:hidden}));return true;}catch(e){return false;}}
+  return kvSet(RKEY,JSON.stringify({items:items,hidden:hidden}));}catch(e){return false;}}
 function gatherRecipe(){
   return {name:$('i_name').value.trim(),style:$('i_style').value,batch:$('i_batch').value,boil:$('i_boil').value,eff:$('i_eff').value,
     yeast:$('i_yeast').value,atten:$('i_atten').value,
@@ -1706,7 +1729,7 @@ function saveLabelsArr(a){try{var bases=new Map(EMBEDDED_LABELS.map(x=>[x._embed
     if(id&&bases.has(id)){present.add(id);var bare=stripLabelMeta(l);if(labelComparable(bare)!==baseCanon(bases.get(id),labelComparable)){changed.add(id);items.push(bare);}}
     else items.push(stripLabelMeta(l||{}));});
   var hidden=EMBEDDED_LABELS.map(x=>x._embeddedId).filter(id=>!present.has(id)||changed.has(id));
-  localStorage.setItem(LBLKEY,JSON.stringify({items:items,hidden:hidden}));return true;}catch(e){return false;}}
+  return kvSet(LBLKEY,JSON.stringify({items:items,hidden:hidden}));}catch(e){return false;}}
 function uidLbl(){return 'l'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
 function addLabelToLibrary(lbl){
   if(!lbl||!lbl.data)return {ok:false,msg:'Není co uložit.'};
@@ -1789,6 +1812,57 @@ function importRecipeText(text){
     msg.style.color=ok?'var(--warn)':'var(--bad)';msg.textContent=ok?('Importováno BEZ etikety (moc velká pro prohlížeč): '+rec.name):'Import se nepodařil (plné úložiště prohlížeče).';renderLibrary();return;}
   renderLibrary();msg.style.color='var(--hop)';msg.textContent='✓ Importováno: '+rec.name+(rec.label?' (vč. etikety)':'');
 }
+
+// ---------- celá knihovna: všechny recepty + všechny etikety v jednom .pivo (stejný formát jako EXE) ----------
+const LIB_HEADER='#PIVO\t1\tknihovna';
+function dataUrlB64(u){const i=(u||'').indexOf(',');if(i<0)return u||'';const meta=u.slice(0,i),body=u.slice(i+1);
+  return meta.indexOf(';base64')>=0?body:btoa(unescape(encodeURIComponent(decodeURIComponent(body))));}
+function serializeLibrary(recs,labels){const L=[LIB_HEADER];
+  (recs||[]).forEach(r=>{const s=serializePivo(r);L.push(s.slice(s.indexOf('\n')+1));});
+  (labels||[]).forEach(l=>{if(l&&l.data)L.push(['E',e2(l.name),e2(l.mime),dataUrlB64(l.data)].join('\t'));});
+  return L.join('\n');}
+function parsePivoAll(text){const recs=[],labels=[];let cur=null;
+  const flush=()=>{if(cur){const r=parsePivo(cur.join('\n'));if(r)recs.push(r);}cur=null;};
+  (text||'').replace(/\r\n/g,'\n').split('\n').forEach(line=>{
+    if(line.indexOf('@R\t')===0){flush();cur=[line];}
+    else if(line.indexOf('E\t')===0){const c=line.split('\t');if(c[3]){const mime=c[2]||'application/octet-stream';labels.push({name:c[1]||'etiketa',mime:mime,data:'data:'+mime+';base64,'+c[3]});}}
+    else if(cur)cur.push(line);});
+  flush();return {isLib:(text||'').indexOf(LIB_HEADER)===0,recipes:recs,labels:labels};}
+function recCanon(r){return serializePivo(Object.assign({},r,{ts:0}));}
+// Sloučení: stejný recept → přeskočit; novější (podle času uložení) → nahradit a sloučit deník; starší → ponechat;
+// bez času nelze rozhodnout → kopie. Etikety: stejné přeskočit, jiné přidat.
+function mergeLibrary(inRecs,inLabels){const res={added:0,updated:0,same:0,kept:0,copies:0,lblAdded:0,lblSame:0,ok:true};
+  const all=loadRecipes();let rc=false;
+  (inRecs||[]).forEach(rec=>{if(!rec||!rec.name)return;const low=rec.name.toLowerCase(),i=all.findIndex(x=>(x.name||'').toLowerCase()===low);
+    if(i<0){all.push(rec);res.added++;rc=true;return;}
+    const ex=all[i];if(recCanon(ex)===recCanon(rec)){res.same++;return;}
+    const a=+rec.ts||0,b=+ex.ts||0;
+    if(a>b){rec.log=rec.log||[];const ids=new Set(rec.log.map(e=>e.id));(ex.log||[]).forEach(e=>{if(!ids.has(e.id))rec.log.push(e);});
+      rec.name=ex.name;all[i]=rec;res.updated++;rc=true;return;}
+    if(a<b){res.kept++;return;}
+    let bn=rec.name+' (import)',k=2;while(all.some(x=>(x.name||'').toLowerCase()===bn.toLowerCase())){bn=rec.name+' (import '+k+')';k++;}
+    rec.name=bn;all.push(rec);res.added++;res.copies++;rc=true;});
+  if(rc&&!saveRecipes(all))res.ok=false;
+  const lbls=loadLabels();let lc=false;
+  (inLabels||[]).forEach(l=>{if(lbls.some(x=>x.data===l.data&&(x.mime||'')===(l.mime||'')&&(x.name||'')===(l.name||''))){res.lblSame++;return;}
+    lbls.push(Object.assign({id:uidLbl()},l));res.lblAdded++;lc=true;});
+  if(lc&&!saveLabelsArr(lbls))res.ok=false;
+  return res;}
+function mergeSummary(r){const p=[];
+  if(r.added)p.push('přidáno receptů: '+r.added+(r.copies?' (z toho '+r.copies+' jako kopie)':''));
+  if(r.updated)p.push('aktualizováno: '+r.updated);if(r.same)p.push('beze změny: '+r.same);
+  if(r.kept)p.push('ponechána novější verze: '+r.kept);if(r.lblAdded)p.push('nových etiket: '+r.lblAdded);
+  if(r.lblSame)p.push('etiket už v knihovně: '+r.lblSame);return p.length?p.join(' · '):'soubor byl prázdný';}
+function exportLibrary(){const recs=loadRecipes(),labels=loadLabels(),msg=$('lib_msg');
+  if(!recs.length&&!labels.length){msg.style.color='var(--bad)';msg.textContent='Knihovna je prázdná.';return;}
+  const d=new Date(),iso=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  saveFile(new Blob([serializeLibrary(recs,labels)],{type:'application/octet-stream'}),'knihovna-pivni-planovac-'+iso+'.pivo');
+  msg.style.color='var(--hop)';msg.textContent='✓ Knihovna vyexportována: '+recs.length+' '+czPlural(recs.length,'recept','recepty','receptů')+' · '+labels.length+' '+czPlural(labels.length,'etiketa','etikety','etiket');}
+// jedno tlačítko Importovat…: soubor s knihovnou (nebo víc recepty / etiketami) se sloučí, jeden recept se přidá jako dřív
+function importPivoText(text){const p=parsePivoAll(text),msg=$('lib_msg');
+  if(!(p.isLib||p.recipes.length>1||p.labels.length)){importRecipeText(text);return;}
+  const r=mergeLibrary(p.recipes,p.labels);renderLibrary();renderLabelLibrary();
+  msg.style.color=r.ok?'var(--hop)':'var(--bad)';msg.textContent=(r.ok?'✓ Knihovna importována: ':'⚠ Import se nepodařilo celý uložit: ')+mergeSummary(r);}
 
 // ---------- pivní ikony do nadpisů ----------
 const ICONS={
@@ -2430,7 +2504,8 @@ $('lbl_file').addEventListener('change',function(e){handleLabelFile(e.target.fil
 $('lib_save').addEventListener('click',saveCurrentRecipe);
 $('lib_export_cur').addEventListener('click',function(){var rec=gatherRecipe();if(!rec.name){$('lib_msg').style.color='var(--bad)';$('lib_msg').textContent='Nejdřív zadej název receptu (v záložce Recept).';return;}exportRecipe(rec);$('lib_msg').style.color='var(--hop)';$('lib_msg').textContent='✓ Vyexportováno: '+rec.name+'.pivo';});
 $('lib_import').addEventListener('click',function(){$('lib_import_file').click();});
-$('lib_import_file').addEventListener('change',function(e){var f=e.target.files&&e.target.files[0];if(!f)return;var rd=new FileReader();rd.onload=function(){importRecipeText(rd.result);};rd.readAsText(f);e.target.value='';});
+$('lib_export_all').addEventListener('click',exportLibrary);
+$('lib_import_file').addEventListener('change',function(e){var f=e.target.files&&e.target.files[0];if(!f)return;var rd=new FileReader();rd.onload=function(){importPivoText(rd.result);};rd.readAsText(f);e.target.value='';});
 $('lib_list').addEventListener('click',function(e){
   var k=e.target.closest('.libetk');if(k){var rk=loadRecipes().find(x=>x.name===k.dataset.n);if(rk&&rk.label)downloadLabel(rk.label);return;}
   var x=e.target.closest('.libexp');if(x){var rx=loadRecipes().find(z=>z.name===x.dataset.n);if(rx)exportRecipe(rx);return;}
