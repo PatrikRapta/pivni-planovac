@@ -1,6 +1,6 @@
 // Service worker Pivního plánovače: aplikace funguje i bez internetu.
 // HTML se bere ze sítě (když je), jinak z cache; ostatní soubory z cache s obnovou na pozadí.
-const CACHE='pivo-8421f121232b';
+const CACHE='pivo-f8a1cba81805';
 const CORE=['./','index.html','manifest.webmanifest','icon-180.png','icon-192.png','icon-512.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting()));});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k.startsWith('pivo-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});
