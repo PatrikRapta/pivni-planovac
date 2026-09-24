@@ -653,6 +653,7 @@ html[data-theme="dark"] ::-webkit-scrollbar-thumb{background:linear-gradient(90d
 .rp-caltbl{margin-top:12px;display:flex;flex-direction:column;gap:4px}
 .rp-calrow{display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-size:13px;padding:6px 10px;border:1px solid var(--border);border-radius:10px;background:var(--panel)}
 .rp-calrow b{font-family:"JetBrains Mono",monospace}.rp-calres{color:var(--muted);font-size:12px;flex:1 1 auto}.rp-calrow .btn{padding:2px 9px;font-size:12px;color:var(--bad);margin-left:auto}
+.rp-pw{display:flex;gap:6px}.rp-pw input{flex:1 1 auto;min-width:0}.rp-eye{padding:6px 12px!important;font-size:12px;white-space:nowrap;flex:0 0 auto}
 .rp-h3{font-family:"Oswald",sans-serif;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);font-weight:500;margin:18px 0 8px;padding-top:14px;border-top:1px solid var(--border)}/* ---------- telefon a malý tablet (iPhone / iPad na výšku) ---------- */
 .sbar{display:none}
 #graintbl td:first-child input::placeholder,#hoptbl td:first-child input::placeholder,#mashtbl td:first-child input::placeholder{color:transparent}
@@ -928,8 +929,8 @@ html[data-theme="dark"] ::-webkit-scrollbar-thumb{background:linear-gradient(90d
       <div class="fields">
         <div class="f rp-proxyf" style="flex:1 1 100%"><label>Adresa serveru (Cloudflare Worker)</label><input id="rp_proxy" type="url" placeholder="https://rapt-proxy.….workers.dev" autocapitalize="off" spellcheck="false"></div>
         <div class="f" style="flex:1 1 220px"><label>RAPT – e-mail</label><input id="rp_user" type="email" autocomplete="username" autocapitalize="off" spellcheck="false"></div>
-        <div class="f" style="flex:1 1 220px"><label>RAPT – API secret</label><input id="rp_secret" type="password" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
-        <div class="f" style="flex:1 1 260px"><label>Klíč vlastního serveru (PIVO_KEY)</label><input id="rp_key" type="password" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
+        <div class="f" style="flex:1 1 220px"><label>RAPT – API secret</label><div class="rp-pw"><input id="rp_secret" type="password" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"><button class="btn rp-eye" data-for="rp_secret" type="button">Zobrazit</button></div></div>
+        <div class="f" style="flex:1 1 260px"><label>Klíč vlastního serveru (PIVO_KEY)</label><div class="rp-pw"><input id="rp_key" type="password" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"><button class="btn rp-eye" data-for="rp_key" type="button">Zobrazit</button></div></div>
       </div>
       <div class="rp-btns"><button class="btn rp-pri" id="rp_connect" type="button">Připojit</button><button class="btn" id="rp_genkey" type="button">Vygenerovat klíč</button><button class="btn" id="rp_forget" type="button">Zapomenout údaje</button></div>
       <div class="rp-msg" id="rp_setup_msg"></div>
@@ -2538,6 +2539,7 @@ async function raptToken(force){
   catch(e){throw new Error('Nelze se spojit se serverem – jsi online a je jeho adresa správně?');}
   if(r.status===400||r.status===401)throw new Error('RAPT odmítl přihlášení – zkontroluj e-mail a API secret.');
   if(r.status===403)throw new Error('Server tuhle aplikaci nepouští (zkontroluj ALLOWED_ORIGINS ve Workeru).');
+  if(r.status>=500)throw new Error('Server na Cloudflare se nedovolal do RAPT (chyba '+r.status+') – nejde o špatné heslo. Zkus to za chvíli, případně otevři adresu serveru s /diag na konci.');
   if(!r.ok)throw new Error('Přihlášení k RAPT selhalo (chyba '+r.status+').');
   const j=await r.json();RAPT_TOKEN={tok:j.access_token,exp:Date.now()+(+j.expires_in||3600)*1000};return RAPT_TOKEN.tok;}
 async function raptGet(path,params){const q=params?'?'+new URLSearchParams(params).toString():'';
@@ -2546,6 +2548,7 @@ async function raptGet(path,params){const q=params?'?'+new URLSearchParams(param
     catch(e){throw new Error('Nelze se spojit s RAPT – jsi online?');}
     if(r.status===401&&attempt===0){RAPT_TOKEN=null;continue;}
     if(r.status===429)throw new Error('RAPT dočasně omezil dotazy – zkus to za pár minut.');
+    if(r.status>=500)throw new Error('Server na Cloudflare se nedovolal do RAPT (chyba '+r.status+').');
     if(!r.ok)throw new Error('RAPT vrátil chybu '+r.status+'.');
     return r.json();}
   throw new Error('RAPT odmítl přístup.');}
@@ -2850,6 +2853,7 @@ function raptLogLine(e){const f=e.ferm;if(!f)return '';const st=f.pts.length?rap
 (function raptInit(){if(!$('p_kvaseni'))return;
   const c=raptCfg();if(!c.proxy&&typeof RAPT_PROXY_DEFAULT==='string')c.proxy=RAPT_PROXY_DEFAULT;
   raptFillSetup();
+  document.querySelectorAll('.rp-eye').forEach(b=>b.addEventListener('click',()=>{const i=$(b.dataset.for),show=i.type==='password';i.type=show?'text':'password';b.textContent=show?'Skrýt':'Zobrazit';}));
   $('rp_connect').addEventListener('click',raptConnect);$('rp_forget').addEventListener('click',raptForget);$('rp_genkey').addEventListener('click',raptGenKey);
   $('rp_refresh').addEventListener('click',()=>raptSync(true));
   $('rp_pill').addEventListener('change',e=>{const c=raptCfg();c.pid=e.target.value;const p=(c.pills||[]).find(x=>x.id===c.pid);c.pname=p?p.name:'';raptSaveCfg();raptRender();raptSync(true);});
