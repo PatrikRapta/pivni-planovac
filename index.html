@@ -642,10 +642,18 @@ html[data-theme="dark"] ::-webkit-scrollbar-thumb{background:linear-gradient(90d
 .rp-fg{stroke:var(--good);stroke-width:1.4;stroke-dasharray:6 5}.rp-fgl{fill:var(--good)}
 .rp-tband{fill:var(--blue);opacity:.08}
 .rp-dot{fill:var(--accent);stroke:var(--card);stroke-width:2}.rp-cross{stroke:var(--muted);stroke-width:1;stroke-dasharray:3 3}
-.rp-legend{display:flex;gap:14px;font-size:12px;margin-top:4px;color:var(--muted)}.rp-legend .lg{color:var(--accent)}.rp-legend .lt{color:var(--blue)}.rp-legend .lb{color:color-mix(in srgb,var(--blue) 55%,var(--muted))}
+.rp-legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;margin-top:4px;color:var(--muted)}.rp-legend span{white-space:nowrap}.rp-legend .lg{color:var(--accent)}.rp-legend .lt{color:var(--blue)}.rp-legend .lb{color:color-mix(in srgb,var(--blue) 55%,var(--muted))}
 .rp-tip{position:absolute;top:4px;left:58px;pointer-events:none;font-size:12px;background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:3px 9px;box-shadow:var(--card-shadow)}
 .lferm{margin-top:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:12.5px;color:var(--muted)}
-.lferm b{color:var(--text);font-family:"JetBrains Mono",monospace;font-size:13px}.lferm .btn{padding:4px 11px;font-size:12px;margin-left:auto}/* ---------- telefon a malý tablet (iPhone / iPad na výšku) ---------- */
+.lferm b{color:var(--text);font-family:"JetBrains Mono",monospace;font-size:13px}.lferm .btn{padding:4px 11px;font-size:12px;margin-left:auto}
+.rp-lR{fill:none;stroke:var(--accent);stroke-width:1;opacity:.28}
+.rp-peak{fill:var(--card);stroke:var(--warn);stroke-width:2}
+.rp-legend .lr{color:color-mix(in srgb,var(--accent) 45%,var(--muted))}.rp-legend .lp{color:var(--warn)}
+.rp-smooth{margin:0 0 0 auto!important;font-size:12.5px}
+.rp-caltbl{margin-top:12px;display:flex;flex-direction:column;gap:4px}
+.rp-calrow{display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-size:13px;padding:6px 10px;border:1px solid var(--border);border-radius:10px;background:var(--panel)}
+.rp-calrow b{font-family:"JetBrains Mono",monospace}.rp-calres{color:var(--muted);font-size:12px;flex:1 1 auto}.rp-calrow .btn{padding:2px 9px;font-size:12px;color:var(--bad);margin-left:auto}
+.rp-h3{font-family:"Oswald",sans-serif;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);font-weight:500;margin:18px 0 8px;padding-top:14px;border-top:1px solid var(--border)}/* ---------- telefon a malý tablet (iPhone / iPad na výšku) ---------- */
 .sbar{display:none}
 #graintbl td:first-child input::placeholder,#hoptbl td:first-child input::placeholder,#mashtbl td:first-child input::placeholder{color:transparent}
 @media(max-width:760px){
@@ -894,7 +902,7 @@ html[data-theme="dark"] ::-webkit-scrollbar-thumb{background:linear-gradient(90d
         <div class="fields">
           <div class="f" style="flex:1 1 200px"><label>Sledovat od</label><input type="datetime-local" id="rp_from"></div>
           <div class="f" style="flex:1 1 200px"><label>Do (prázdné = pořád kvasí)</label><input type="datetime-local" id="rp_to"></div>
-          <div class="f" style="flex:1 1 150px"><label>Korekce hustoty Pillu</label><input class="num" id="rp_off" placeholder="0.000" title="Pill může měřit s posunem – např. -0.002, když ukazuje o 2 body víc než hustoměr"></div>
+          <div class="f" style="flex:1 1 150px"><label>Korekce hustoty</label><input class="num" id="rp_off" placeholder="0.000" title="Pevný posun, např. -0.002 – přesnější je kalibrace níže"></div>
         </div>
         <div class="rp-btns"><button class="btn rp-pri" id="rp_sess_save" type="button">Uložit</button><button class="btn" id="rp_sess_cancel" type="button">Zrušit</button></div>
       </div>
@@ -902,22 +910,31 @@ html[data-theme="dark"] ::-webkit-scrollbar-thumb{background:linear-gradient(90d
 
     <div class="card" id="rp_chart_card"><h2>Průběh kvašení</h2>
       <div class="rp-range" id="rp_range" role="group" aria-label="Rozsah grafu">
-        <button class="btn on" data-r="all" type="button">Vše</button><button class="btn" data-r="7" type="button">7 dní</button><button class="btn" data-r="2" type="button">48 h</button></div>
+        <button class="btn on" data-r="all" type="button">Vše</button><button class="btn" data-r="7" type="button">7 dní</button><button class="btn" data-r="2" type="button">48 h</button>
+        <label class="link solo rp-smooth"><input type="checkbox" id="rp_smooth" checked> Vyhladit</label></div>
       <div class="rp-chart" id="rp_chart"><div class="rp-empty">Graf se ukáže, až začneš sledovat kvašení várky.</div></div>
       <div class="lstats" id="rp_stats"></div>
     </div>
 
+    <div class="card" id="rp_cal_card"><h2>Kalibrace hustoty Pillu</h2>
+      <div id="rp_cal"></div>
+    </div>
+
     <div class="card" id="rp_setup_card"><h2>Připojení RAPT Pill</h2>
-      <div class="rp-help">Plánovač si data bere z cloudu RAPT (Pill v režimu Wi-Fi nebo přes Bluetooth most / řídicí jednotku RAPT).
-        V aplikaci RAPT otevři <b>My Account → API Secrets</b>, vytvoř nový secret a opiš ho sem – RAPT ho ukáže jen jednou.
+      <div class="rp-help">Data můžou chodit dvěma cestami – vyplň jednu nebo obě:
+        <b>cloud RAPT</b> (Pill na Wi-Fi; v aplikaci RAPT → My Account → API Secrets vytvoř secret) a
+        <b>vlastní přijímač ESP32</b> (Pill na Bluetooth, data jdou na tvůj server). Obojí jde přes tvůj Cloudflare Worker.
         Údaje zůstávají jen v tomto zařízení a do exportů knihovny se neukládají.</div>
       <div class="fields">
-        <div class="f" style="flex:1 1 220px"><label>Uživatel RAPT (e-mail)</label><input id="rp_user" type="email" autocomplete="username" autocapitalize="off" spellcheck="false"></div>
-        <div class="f" style="flex:1 1 220px"><label>API secret</label><input id="rp_secret" type="password" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
-        <div class="f rp-proxyf" style="flex:1 1 100%"><label>Adresa prostředníka (Cloudflare Worker)</label><input id="rp_proxy" type="url" placeholder="https://rapt-proxy.….workers.dev" autocapitalize="off" spellcheck="false"></div>
+        <div class="f rp-proxyf" style="flex:1 1 100%"><label>Adresa serveru (Cloudflare Worker)</label><input id="rp_proxy" type="url" placeholder="https://rapt-proxy.….workers.dev" autocapitalize="off" spellcheck="false"></div>
+        <div class="f" style="flex:1 1 220px"><label>RAPT – e-mail</label><input id="rp_user" type="email" autocomplete="username" autocapitalize="off" spellcheck="false"></div>
+        <div class="f" style="flex:1 1 220px"><label>RAPT – API secret</label><input id="rp_secret" type="password" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
+        <div class="f" style="flex:1 1 260px"><label>Klíč vlastního serveru (PIVO_KEY)</label><input id="rp_key" type="password" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
       </div>
-      <div class="rp-btns"><button class="btn rp-pri" id="rp_connect" type="button">Připojit</button><button class="btn" id="rp_forget" type="button">Zapomenout údaje</button></div>
+      <div class="rp-btns"><button class="btn rp-pri" id="rp_connect" type="button">Připojit</button><button class="btn" id="rp_genkey" type="button">Vygenerovat klíč</button><button class="btn" id="rp_forget" type="button">Zapomenout údaje</button></div>
       <div class="rp-msg" id="rp_setup_msg"></div>
+      <h3 class="rp-h3">Upozornění do iPhonu</h3>
+      <div id="rp_push"></div>
     </div>
   </section>
 
@@ -1871,7 +1888,7 @@ function serializePivo(rec){
   (rec.mash||[]).forEach(m=>L.push(['M',e2(m.n),e2(m.t),e2(m.c)].join('\t')));
   var st=rec.settings||{};Object.keys(st).forEach(k=>L.push(['S',e2(k),e2(st[k])].join('\t')));
   (rec.log||[]).forEach(b=>L.push(['B',e2(b.id),e2(b.date),e2(b.vol),e2(b.og),e2(b.ogU),e2(b.fg),e2(b.fgU),e2(b.wcf),e2(b.pack),e2(b.rating),escN(b.notes)].join('\t')));
-  (rec.log||[]).forEach(b=>{const f=b.ferm;if(f)L.push(['F',e2(b.id),e2(f.pid),e2(f.pname),String(f.from||0),String(f.to||0),String(f.off||0),(f.pts||[]).map(p=>[Math.round((p[0]-f.from)/1000),p[1],p[2],p[3]].join(',')).join(';')].join('\t'));});
+  (rec.log||[]).forEach(b=>{const f=b.ferm;if(f)L.push(['F',e2(b.id),e2(f.pid),e2(f.pname),String(f.from||0),String(f.to||0),String(f.off||0),(f.pts||[]).map(p=>[Math.round((p[0]-f.from)/1000),p[1],p[2],p[3]].concat(p[4]!=null?[p[4]]:[]).join(',')).join(';')].concat(f.cal&&f.cal.coef?[(f.cal.type==='tilt'?'t':'l')+'|'+(f.cal.on?1:0)+'|'+f.cal.coef.join('|')]:[]).join('\t'));});
   if(rec.ts)L.push(['T',String(rec.ts)].join('\t'));
   if(rec.label&&rec.label.data){var i=rec.label.data.indexOf(',');var b64=i>=0?rec.label.data.slice(i+1):rec.label.data;L.push(['L',e2(rec.label.name),e2(rec.label.mime),b64].join('\t'));}
   return L.join('\n');
@@ -1887,7 +1904,7 @@ function parsePivo(text){
     else if(c[0]==='S'&&c[1])rec.settings[c[1]]=c[2]||'';
     else if(c[0]==='B')rec.log.push({id:c[1]||logUid(),date:c[2]||'',vol:c[3]||'',og:c[4]||'',ogU:c[5]||'sg',fg:c[6]||'',fgU:c[7]||'sg',wcf:c[8]||'',pack:c[9]||'',rating:c[10]||'0',notes:unescN(c[11]||'')});
     else if(c[0]==='T')rec.ts=+c[1]||0;
-    else if(c[0]==='F'&&c[1]){var fr=+c[4]||0;ferms.push([c[1],{pid:c[2]||'',pname:c[3]||'',from:fr,to:+c[5]||0,off:+c[6]||0,pts:(c[7]||'').split(';').filter(Boolean).map(function(s){var v=s.split(',');return [fr+(+v[0]||0)*1000,+v[1],+v[2],+v[3]||0];})}]);}
+    else if(c[0]==='F'&&c[1]){var fr=+c[4]||0;ferms.push([c[1],{pid:c[2]||'',pname:c[3]||'',from:fr,to:+c[5]||0,off:+c[6]||0,pts:(c[7]||'').split(';').filter(Boolean).map(function(s){var v=s.split(',');var row=[fr+(+v[0]||0)*1000,+v[1],+v[2],+v[3]||0];if(v[4]!==undefined&&v[4]!=='')row.push(+v[4]);return row;}),cal:(function(s){if(!s)return undefined;var q=s.split('|');return {type:q[0]==='t'?'tilt':'lin',on:q[1]==='1',coef:q.slice(2).map(Number)};})(c[8])}]);}
     else if(c[0]==='L'&&c[3]){var mime=c[2]||'application/octet-stream';rec.label={name:c[1]||'etiketa',mime:mime,data:'data:'+mime+';base64,'+c[3]};}
   });
   ferms.forEach(function(x){var b=rec.log.find(function(e){return e.id===x[0];});if(b)b.ferm=x[1];});
@@ -1991,6 +2008,7 @@ const ICONS={
 // piktogram podle nadpisu karty – od nejkonkrétnějších pravidel k obecným
 function iconFor(t){t=(t||'').toLowerCase();
  if(t.includes('připojení'))return 'sliders';
+ if(t.includes('kalibrac'))return 'target';
  if(t.includes('pill'))return 'hydro';
  if(t.includes('průběh'))return 'chart';
  if(t.includes('várka a recept'))return 'journal';
@@ -2491,27 +2509,35 @@ function persistLog(){const name=$('i_name').value.trim(),hint=$('log_hint');con
   else{LOG_UNSAVED=true;hint.style.color='var(--warn)';hint.textContent='Recept „'+(name||'bez názvu')+'" ještě není v knihovně – várky se uloží spolu s receptem (Knihovna → Uložit aktuální).';}
   updateDirty();}
 
-// ---------- kvašení: RAPT Pill z cloudu RAPT ----------
-// Web volá RAPT přes prostředníka (Cloudflare Worker, Zdrojak/rapt-proxy) – RAPT API pouští prohlížeče jen z app.rapt.io.
+// ---------- kvašení: RAPT Pill ----------
+// Dva zdroje dat: 1) cloud RAPT (Pill na Wi-Fi) přes prostředníka – RAPT API pouští prohlížeče jen z app.rapt.io,
+// 2) vlastní server (Cloudflare Worker + přijímač ESP32 chytající Bluetooth vysílání Pillu, Zdrojak/esp32-pill).
 // Měření se ukládají k várce ve varním deníku (e.ferm), takže jsou v knihovně, v exportu .pivo i offline.
 const RAPT_KEY='pivo_rapt_v1';
-let RAPT=null,RAPT_TOKEN=null,RAPT_HYDROS=[],RAPT_LAST_SYNC=0,RAPT_BUSY=false,RAPT_RANGE='all',RAPT_SEL=null,RAPT_FORM=null;
-function raptCfg(){if(!RAPT){try{RAPT=JSON.parse(kvGet(RAPT_KEY))||{};}catch(e){RAPT={};}}return RAPT;}
+let RAPT=null,RAPT_TOKEN=null,RAPT_LAST_SYNC=0,RAPT_BUSY=false,RAPT_RANGE='all',RAPT_SEL=null,RAPT_FORM=null;
+function raptCfg(){if(!RAPT){try{RAPT=JSON.parse(kvGet(RAPT_KEY))||{};}catch(e){RAPT={};}}
+  if(!RAPT.lives)RAPT.lives={};if(!RAPT.cals)RAPT.cals={};if(RAPT.smooth===undefined)RAPT.smooth=true;
+  if(RAPT.live&&RAPT.pid&&!RAPT.lives[RAPT.pid]){RAPT.lives[RAPT.pid]=RAPT.live;delete RAPT.live;}   // starší uložení
+  return RAPT;}
 function raptSaveCfg(){kvSet(RAPT_KEY,JSON.stringify(RAPT||{}));}
 function raptOnStorage(){RAPT=null;raptFillSetup();raptRender();}          // volá se po načtení IndexedDB
-function raptReady(){const c=raptCfg();return !!(c.user&&c.secret&&c.proxy);}
+function srcReady(){const c=raptCfg();return {rapt:!!(c.user&&c.secret&&c.proxy),own:!!(c.proxy&&c.key)};}
+function raptReady(){const s=srcReady();return s.rapt||s.own;}
 function raptBase(){return (raptCfg().proxy||'').trim().replace(/\/+$/,'');}
+const isOwn=id=>String(id||'').indexOf('own:')===0;
 const sgOf=g=>{g=+g;return g>2?g/1000:g;};                                  // RAPT posílá SG (1.048) nebo body (1048)
 function raptMsg(t,cls){const m=$('rp_msg');if(m){m.textContent=t||'';m.className='rp-msg'+(cls?' '+cls:'');}}
 function raptSetupMsg(t,cls){const m=$('rp_setup_msg');if(m){m.textContent=t||'';m.className='rp-msg'+(cls?' '+cls:'');}}
+function curLive(){const c=raptCfg();return c.lives[c.pid]||null;}
 
+// ---------- cloud RAPT ----------
 async function raptToken(force){
   if(!force&&RAPT_TOKEN&&RAPT_TOKEN.exp>Date.now()+60000)return RAPT_TOKEN.tok;
   const c=raptCfg(),body=new URLSearchParams({client_id:'rapt-user',grant_type:'password',username:c.user,password:c.secret});
   let r;try{r=await fetch(raptBase()+'/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:body.toString()});}
-  catch(e){throw new Error('Nelze se spojit s prostředníkem – jsi online a je adresa prostředníka správně?');}
+  catch(e){throw new Error('Nelze se spojit se serverem – jsi online a je jeho adresa správně?');}
   if(r.status===400||r.status===401)throw new Error('RAPT odmítl přihlášení – zkontroluj e-mail a API secret.');
-  if(r.status===403)throw new Error('Prostředník tuhle aplikaci nepouští (zkontroluj ALLOWED_ORIGINS ve Workeru).');
+  if(r.status===403)throw new Error('Server tuhle aplikaci nepouští (zkontroluj ALLOWED_ORIGINS ve Workeru).');
   if(!r.ok)throw new Error('Přihlášení k RAPT selhalo (chyba '+r.status+').');
   const j=await r.json();RAPT_TOKEN={tok:j.access_token,exp:Date.now()+(+j.expires_in||3600)*1000};return RAPT_TOKEN.tok;}
 async function raptGet(path,params){const q=params?'?'+new URLSearchParams(params).toString():'';
@@ -2523,87 +2549,141 @@ async function raptGet(path,params){const q=params?'?'+new URLSearchParams(param
     if(!r.ok)throw new Error('RAPT vrátil chybu '+r.status+'.');
     return r.json();}
   throw new Error('RAPT odmítl přístup.');}
+// ---------- vlastní server (ESP32 → Worker) ----------
+async function ownFetch(path,body){const c=raptCfg(),h={'X-Pivo-Key':c.key};if(body)h['Content-Type']='application/json';let r;
+  try{r=await fetch(raptBase()+'/own'+path,body?{method:'POST',headers:h,body:JSON.stringify(body)}:{headers:h});}
+  catch(e){throw new Error('Nelze se spojit s vlastním serverem – jsi online?');}
+  const j=await r.json().catch(()=>({}));
+  if(r.status===401)throw new Error('Vlastní server odmítl klíč (PIVO_KEY).');
+  if(!r.ok)throw new Error(j.error||('Vlastní server vrátil chybu '+r.status+'.'));
+  return j;}
 
 // ---------- várky s Pillem ----------
 function raptActiveEntry(){return currentLog.filter(e=>e.ferm&&!e.ferm.to).sort((a,b)=>b.ferm.from-a.ferm.from)[0]||null;}
 function raptShownEntry(){return (RAPT_SEL&&currentLog.find(e=>e.id===RAPT_SEL&&e.ferm))||raptActiveEntry()||
   currentLog.filter(e=>e.ferm).sort((a,b)=>b.ferm.from-a.ferm.from)[0]||null;}
+function addPts(f,rows){let added=0;const lastT=f.pts.length?f.pts[f.pts.length-1][0]:-Infinity;
+  rows.forEach(p=>{p.t=Math.round(p.t/1000)*1000;});                     // čas na celé sekundy (tak se ukládá do .pivo)
+  rows.filter(p=>p.t>=f.from&&p.t>lastT&&p.g>0.95&&p.g<1.2&&(!f.to||p.t<=f.to)).sort((a,b)=>a.t-b.t).forEach(p=>{
+    if(!f.pts.length||p.t>f.pts[f.pts.length-1][0]){const row=[p.t,+p.g.toFixed(4),Math.round(p.T*10)/10,Math.round(p.b)];
+      if(p.tilt!=null&&!isNaN(p.tilt))row.push(Math.round(p.tilt*100)/100);f.pts.push(row);added++;}});
+  return added;}
 
 async function raptSync(manual){
   if(!raptReady()||RAPT_BUSY)return;
   if(!manual&&Date.now()-RAPT_LAST_SYNC<5*60e3)return;                      // šetrně – RAPT má pravidla férového používání
-  RAPT_BUSY=true;raptMsg('Načítám z RAPT…','');const btn=$('rp_refresh');if(btn)btn.disabled=true;
+  RAPT_BUSY=true;raptMsg('Načítám…','');const btn=$('rp_refresh');if(btn)btn.disabled=true;
+  const c=raptCfg(),s=srcReady(),errs=[],pills=[];let added=0;
   try{
-    const list=await raptGet('GetHydrometers');RAPT_HYDROS=Array.isArray(list)?list.filter(h=>!h.deleted):[];
-    const c=raptCfg();
-    if(!RAPT_HYDROS.some(h=>h.id===c.pid)){const h0=RAPT_HYDROS[0];c.pid=h0?h0.id:'';c.pname=h0?h0.name:'';}
-    c.pills=RAPT_HYDROS.map(h=>({id:h.id,name:h.name||h.serialNumber||'Pill'}));
-    const h=RAPT_HYDROS.find(x=>x.id===c.pid);
-    if(h)c.live={sg:sgOf(h.gravity),temp:+h.temperature,vel:h.gravityVelocity,batt:+h.battery,rssi:h.rssi,
-      at:Date.parse(h.lastActivityTime)||0,state:h.connectionState||'',name:h.name||''};
+    if(s.rapt){try{const list=await raptGet('GetHydrometers');
+      (Array.isArray(list)?list:[]).filter(h=>!h.deleted).forEach(h=>{pills.push({id:h.id,name:(h.name||h.serialNumber||'Pill')+' (RAPT)',src:'rapt'});
+        c.lives[h.id]={sg:sgOf(h.gravity),temp:+h.temperature,vel:h.gravityVelocity,batt:+h.battery,rssi:h.rssi,at:Date.parse(h.lastActivityTime)||0,src:'rapt'};});}
+      catch(e){errs.push('RAPT: '+e.message);}}
+    if(s.own){try{const list=await ownFetch('/pills');
+      (Array.isArray(list)?list:[]).forEach(p=>{const id='own:'+p.mac,L=p.last||{};pills.push({id,name:(p.name||p.mac)+' (ESP32)',src:'own'});
+        c.lives[id]={sg:+L.sg,temp:+L.temp,vel:L.vel,batt:+L.batt,rssi:L.rssi,tilt:L.tilt,at:+L.ts||0,src:'own'};});}
+      catch(e){errs.push('ESP32: '+e.message);}}
+    if(pills.length){c.pills=pills;if(!pills.some(p=>p.id===c.pid)){c.pid=pills[0].id;c.pname=pills[0].name;}}
     raptSaveCfg();
-    let added=0;const e=raptActiveEntry();
-    if(e&&e.ferm.pid){const f=e.ferm,now=Date.now();let from=f.pts.length?f.pts[f.pts.length-1][0]+1000:f.from,guard=0;
-      while(from<now&&guard++<40){const to=Math.min(now,from+3*864e5);
-        const arr=await raptGet('GetTelemetry',{hydrometerId:f.pid,startDate:new Date(from).toISOString(),endDate:new Date(to).toISOString()});
-        const lastT=f.pts.length?f.pts[f.pts.length-1][0]:-Infinity;
-        (Array.isArray(arr)?arr:[]).map(t=>({t:Math.round(Date.parse(t.createdOn)/1000)*1000,g:sgOf(t.gravity),T:+t.temperature,b:+t.battery||0}))
-          .filter(p=>p.t>=f.from&&p.t>lastT&&p.g>0.95&&p.g<1.2).sort((a,b)=>a.t-b.t)
-          .forEach(p=>{if(!f.pts.length||p.t>f.pts[f.pts.length-1][0]){f.pts.push([p.t,+p.g.toFixed(4),Math.round(p.T*10)/10,Math.round(p.b)]);added++;}});
-        from=to+1;}
-      f.synced=now;persistLog();}
-    RAPT_LAST_SYNC=Date.now();raptMsg(added?'✓ Staženo nových měření: '+added:'✓ Aktuální data z RAPT','ok');
-  }catch(err){raptMsg(err.message,'bad');}
-  finally{RAPT_BUSY=false;if(btn)btn.disabled=false;raptRender();}}
+    const e=raptActiveEntry();
+    if(e&&e.ferm.pid){const f=e.ferm,now=Date.now();
+      try{
+        if(isOwn(f.pid)){if(!s.own)throw new Error('pro tuto várku chybí klíč vlastního serveru');
+          const mac=f.pid.slice(4);let guard=0,more=true;
+          while(more&&guard++<20){const from=f.pts.length?f.pts[f.pts.length-1][0]:f.from-1;
+            const arr=await ownFetch('/telemetry?'+new URLSearchParams({mac,from:String(from),to:String(f.to||now)}).toString());
+            const rows=(Array.isArray(arr)?arr:[]).map(a=>({t:+a[0],g:+a[1],T:+a[2],b:+a[3],tilt:a[4]}));
+            added+=addPts(f,rows);more=rows.length>=5000;}}
+        else{if(!s.rapt)throw new Error('pro tuto várku chybí přihlášení k RAPT');
+          let from=f.pts.length?f.pts[f.pts.length-1][0]+1000:f.from,guard=0;const end=f.to||now;
+          while(from<end&&guard++<40){const to=Math.min(end,from+3*864e5);
+            const arr=await raptGet('GetTelemetry',{hydrometerId:f.pid,startDate:new Date(from).toISOString(),endDate:new Date(to).toISOString()});
+            added+=addPts(f,(Array.isArray(arr)?arr:[]).map(t=>({t:Math.round(Date.parse(t.createdOn)/1000)*1000,g:sgOf(t.gravity),T:+t.temperature,b:+t.battery||0})));
+            from=to+1;}}
+        f.synced=now;persistLog();
+      }catch(err){errs.push('Várka: '+err.message);}}
+    RAPT_LAST_SYNC=Date.now();
+    if(errs.length)raptMsg(errs.join(' · '),'bad');else raptMsg(added?'✓ Staženo nových měření: '+added:'✓ Data jsou aktuální','ok');
+  }finally{RAPT_BUSY=false;if(btn)btn.disabled=false;raptRender();}}
+
+// ---------- kalibrace hustoty ----------
+// tilt: hustota = polynom z náklonu Pillu (jako iSpindel, jen z vlastního přijímače); lin: oprava hustoty, kterou spočítal Pill
+function polyfit(xs,ys,d){const n=d+1,A=[];for(let i=0;i<n;i++){A.push(new Array(n+1).fill(0));}
+  xs.forEach((x,k)=>{for(let i=0;i<n;i++){for(let j=0;j<n;j++)A[i][j]+=Math.pow(x,i+j);A[i][n]+=ys[k]*Math.pow(x,i);}});
+  for(let i=0;i<n;i++){let p=i;for(let r=i+1;r<n;r++)if(Math.abs(A[r][i])>Math.abs(A[p][i]))p=r;[A[i],A[p]]=[A[p],A[i]];
+    if(Math.abs(A[i][i])<1e-12)return null;for(let r=0;r<n;r++){if(r===i)continue;const k=A[r][i]/A[i][i];for(let j=i;j<=n;j++)A[r][j]-=k*A[i][j];}}
+  return A.map((row,i)=>row[n]/row[i]);}
+const polyv=(c,x)=>c.reduce((s,k,i)=>s+k*Math.pow(x,i),0);
+function calFit(cal){const P=cal.pts||[];cal.coef=null;const n=P.length;if(!n)return cal;
+  if(cal.type==='tilt'){const d=n>=5?3:n>=3?2:n===2?1:-1;if(d>=1)cal.coef=polyfit(P.map(p=>p.x),P.map(p=>p.sg),d);}
+  else{if(n===1)cal.coef=[P[0].sg-P[0].x,1];else cal.coef=polyfit(P.map(p=>p.x),P.map(p=>p.sg),1);}
+  return cal;}
+function calOf(f){const c=raptCfg();const cal=f&&f.cal?f.cal:(f?c.cals[f.pid]:null);return cal&&cal.on&&cal.coef&&cal.coef.length?cal:null;}
+function calApply(cal,g,tilt){if(!cal)return g;if(cal.type==='tilt')return tilt!=null&&!isNaN(tilt)?polyv(cal.coef,tilt):g;return polyv(cal.coef,g);}
 
 // ---------- výpočty z průběhu ----------
 function yeastTempRange(){const y=YEASTS.find(x=>x.name===$('i_yeast').value.trim());if(!y||!y.temp)return null;
   const m=/(\d+(?:[.,]\d+)?)\s*[-–]\s*(\d+(?:[.,]\d+)?)\s*°C/.exec(y.temp);return m?{lo:pn(m[1]),hi:pn(m[2]),name:y.name}:null;}
-function raptSeries(f){const off=+f.off||0;return f.pts.map(p=>({t:p[0],g:p[1]+off,T:p[2],b:p[3]}));}
+function medianOf(a){const s=a.slice().sort((x,y)=>x-y);return s.length?s[Math.floor(s.length/2)]:NaN;}
+// body: g = (vyhlazená) hustota po kalibraci a korekci, raw = bez vyhlazení; vyhlazení = klouzavý medián z 5 měření (odstraní skoky z bublin a nárazů)
+function raptSeries(f){const off=+f.off||0,cal=calOf(f),c=raptCfg();
+  const P=f.pts.map(p=>({t:p[0],raw:calApply(cal,p[1],p[4])+off,T:p[2],b:p[3],tilt:p[4]}));
+  P.forEach((p,i)=>{p.g=c.smooth?medianOf(P.slice(Math.max(0,i-2),i+3).map(q=>q.raw)):p.raw;});return P;}
+function slope(win){const n=win.length;if(n<3)return NaN;const mx=win.reduce((s,p)=>s+p.t,0)/n,my=win.reduce((s,p)=>s+p.g,0)/n;
+  let a=0,b=0;win.forEach(p=>{a+=(p.t-mx)*(p.g-my);b+=(p.t-mx)*(p.t-mx);});return b>0?a/b*864e5*1000:NaN;}   // body za den
 function raptStats(f){const P=raptSeries(f);if(!P.length)return null;
   const first=P[0].t,last=P[P.length-1],span=last.t-first;
   const early=P.filter(p=>p.t<=first+12*36e5),og=Math.max(...early.map(p=>p.g));
-  const tail=P.slice(-3).map(p=>p.g).sort((a,b)=>a-b),cur=tail[Math.floor(tail.length/2)];
-  const win=P.filter(p=>p.t>=last.t-24*36e5);let vel=NaN;
-  if(win.length>=3&&last.t-win[0].t>=6*36e5){const n=win.length,mx=win.reduce((s,p)=>s+p.t,0)/n,my=win.reduce((s,p)=>s+p.g,0)/n;
-    let num_=0,den=0;win.forEach(p=>{num_+=(p.t-mx)*(p.g-my);den+=(p.t-mx)*(p.t-mx);});vel=den>0?num_/den*864e5*1000:NaN;}
+  const cur=last.g;
+  const win=P.filter(p=>p.t>=last.t-24*36e5);const vel=last.t-win[0].t>=6*36e5?slope(win):NaN;
+  // nejrychlejší kvašení (sklon za 6 h) a rozjezd (kdy hustota klesla o 2 body pod OG)
+  let peak=NaN,peakT=0,j=0;for(let i=0;i<P.length;i++){while(P[j].t<P[i].t-6*36e5)j++;if(P[i].t-P[j].t>=4*36e5){const v=slope(P.slice(j,i+1));if(!(v>=peak)&&!isNaN(v)){peak=v;peakT=P[i].t;}}}
+  const dropAt=(P.find(p=>p.t>first&&p.g<=og-0.002)||{}).t;
   const w48=P.filter(p=>p.t>=last.t-48*36e5),stable=span>=48*36e5&&w48.length>=4&&(Math.max(...w48.map(p=>p.g))-Math.min(...w48.map(p=>p.g)))<=0.0010;
   const temps=P.map(p=>p.T).filter(v=>!isNaN(v));
   const fgT=LAST&&LAST.fg>0?LAST.fg:NaN;let eta=NaN;
   if(!stable&&vel<-0.3&&fgT>0&&cur>fgT+0.0005)eta=last.t+(cur-fgT)*1000/(-vel)*864e5;
-  return {og,cur,vel,stable,span,att:og>1?(og-cur)/(og-1)*100:NaN,abv:og>cur?(og-cur)*131.25:0,
-    tMin:Math.min(...temps),tMax:Math.max(...temps),tAvg:temps.reduce((s,v)=>s+v,0)/(temps.length||1),tNow:last.T,last:last.t,fgT,eta,n:P.length};}
+  return {og,cur,vel,stable,span,att:og>1?(og-cur)/(og-1)*100:NaN,abv:og>cur?(og-cur)*131.25:0,peak,peakT,lag:dropAt?dropAt-first:NaN,
+    tMin:Math.min(...temps),tMax:Math.max(...temps),tAvg:temps.reduce((s,v)=>s+v,0)/(temps.length||1),tNow:last.T,last:last.t,fgT,eta,n:P.length,cal:!!calOf(f)};}
 function fmtDT(ms){const d=new Date(ms);return d.toLocaleDateString('cs-CZ',{day:'numeric',month:'numeric'})+' '+d.toLocaleTimeString('cs-CZ',{hour:'2-digit',minute:'2-digit'});}
 function fmtAgo(ms){const m=Math.round((Date.now()-ms)/6e4);if(m<1)return 'právě teď';if(m<60)return 'před '+m+' min';const h=Math.round(m/60);
   if(h<48)return 'před '+h+' h';const d=Math.round(h/24);return 'před '+d+' '+czPlural(d,'dnem','dny','dny');}
 function fmtDur(ms){const h=ms/36e5;if(h<48)return Math.round(h)+' h';const d=Math.round(h/24);return d+' '+czPlural(d,'den','dny','dní');}
 
+// ---------- hlídání na serveru (upozornění do iPhonu – jen pro vlastní přijímač) ----------
+async function raptWatch(e){const c=raptCfg();if(!e||!e.ferm||!isOwn(e.ferm.pid)||!srcReady().own)return;
+  const f=e.ferm,yr=yeastTempRange();
+  try{await ownFetch('/watch',{mac:f.pid.slice(4),active:!f.to,from:f.from,name:$('i_name').value.trim()||'Várka',fg:LAST&&LAST.fg>0?+LAST.fg.toFixed(4):0,
+    tlo:yr?yr.lo:0,thi:yr?yr.hi:0,off:+f.off||0,cal:calOf(f)});}catch(err){raptMsg('Hlídání na serveru se nepodařilo nastavit: '+err.message,'bad');}}
+
 // ---------- vykreslení ----------
-function raptRender(){if(!$('p_kvaseni'))return;raptRenderLive();raptRenderSess();raptRenderChart();}
-function raptRenderLive(){const c=raptCfg(),L=c.live,box=$('rp_live'),empty=$('rp_live_empty');
+function raptRender(){if(!$('p_kvaseni'))return;raptRenderLive();raptRenderSess();raptRenderChart();raptRenderCal();raptRenderPush();}
+function raptRenderLive(){const c=raptCfg(),L=curLive(),box=$('rp_live'),empty=$('rp_live_empty');
   const has=raptReady()&&L;box.hidden=!has;empty.hidden=!!has;
   if(!raptReady())empty.textContent='Připoj svůj RAPT Pill níže – uvidíš tu okamžitou hustotu, teplotu, baterii a rychlost kvašení.';
   else if(!L)empty.textContent='Připojeno. Klepni na „Obnovit" nebo počkej na první načtení.';
   if(!has)return;
-  const sel=$('rp_pill'),pills=c.pills||[{id:c.pid,name:c.pname||L.name||'Pill'}];
+  const sel=$('rp_pill'),pills=c.pills&&c.pills.length?c.pills:[{id:c.pid,name:c.pname||'Pill'}];
   sel.innerHTML=pills.map(p=>`<option value="${esc(p.id)}"${p.id===c.pid?' selected':''}>${esc(p.name)}</option>`).join('');
-  const e=raptShownEntry(),off=e&&e.ferm&&e.ferm.pid===c.pid?(+e.ferm.off||0):(+c.off||0),g=L.sg+off;
-  $('rp_sg').textContent=g>0.9?sg(g):'–';$('rp_plato').textContent=g>0.9?n1(platoFromSG(g))+' °P'+(off?' · korekce '+(off>0?'+':'')+off.toFixed(3):''):'';
+  const e=raptShownEntry(),fe=e&&e.ferm&&e.ferm.pid===c.pid?e.ferm:null,cal=fe?calOf(fe):calOf({pid:c.pid}),off=fe?(+fe.off||0):0;
+  const g=calApply(cal,L.sg,L.tilt)+off;
+  $('rp_sg').textContent=g>0.9?sg(g):'–';
+  $('rp_plato').textContent=g>0.9?n1(platoFromSG(g))+' °P'+(cal?' · kalibrováno':'')+(off?' · korekce '+(off>0?'+':'')+off.toFixed(3):''):'';
   $('rp_temp').textContent=isNaN(L.temp)?'–':n1(L.temp);
   const yr=yeastTempRange();$('rp_trange').textContent=yr?'kvasnice '+n0(yr.lo)+'–'+n0(yr.hi)+' °C':'';
   $('rp_vel').textContent=L.vel==null||isNaN(+L.vel)?'–':(+L.vel>0?'+':'')+n1(+L.vel);
-  $('rp_batt').textContent=isNaN(L.batt)?'–':n0(L.batt);$('rp_rssi').textContent=L.rssi?'signál '+n0(L.rssi)+' dBm':'';
-  $('rp_age').textContent=L.at?'měřeno '+fmtAgo(L.at):'';
-  // upozornění
+  $('rp_batt').textContent=isNaN(L.batt)?'–':n0(L.batt);
+  $('rp_rssi').textContent=(L.rssi?'signál '+n0(L.rssi)+' dBm':'')+(L.tilt!=null&&!isNaN(+L.tilt)?(L.rssi?' · ':'')+'náklon '+n1(+L.tilt)+'°':'');
+  $('rp_age').textContent=L.at?'měřeno '+fmtAgo(L.at)+(L.src==='own'?' · ESP32':' · RAPT'):'';
   const A=[],st=e&&e.ferm&&e.ferm.pts.length?raptStats(e.ferm):null;
   if(st&&st.stable)A.push(['ok','Hustota se 48 h nemění (±0,5 bodu) – pivo je nejspíš dokvašené. Můžeš stáčet nebo začít s chmelením za studena.']);
   else if(st&&st.fgT>0&&st.cur<=st.fgT+0.002)A.push(['ok','Hustota je u cílové FG receptu ('+sg(st.fgT)+').']);
   if(yr&&!isNaN(L.temp)){if(L.temp>yr.hi+0.5)A.push(['warn','Teplota '+n1(L.temp)+' °C je nad rozsahem kvasnic ('+n0(yr.lo)+'–'+n0(yr.hi)+' °C) – hrozí estery a fuzely.']);
     else if(L.temp<yr.lo-0.5)A.push(['warn','Teplota '+n1(L.temp)+' °C je pod rozsahem kvasnic ('+n0(yr.lo)+'–'+n0(yr.hi)+' °C) – kvašení se může zpomalit.']);}
   if(L.batt>0&&L.batt<20)A.push(['warn','Baterie Pillu je na '+n0(L.batt)+' % – nabij ho před další várkou.']);
-  if(L.at&&Date.now()-L.at>3*36e5)A.push(['bad','Pill se naposledy ozval '+fmtAgo(L.at)+' – je v dosahu Wi-Fi / mostu?']);
+  if(L.at&&Date.now()-L.at>3*36e5)A.push(['bad','Pill se naposledy ozval '+fmtAgo(L.at)+(L.src==='own'?' – je přijímač ESP32 zapnutý a v dosahu?':' – je v dosahu Wi-Fi / mostu?')]);
   $('rp_alerts').innerHTML=A.map(a=>`<div class="rp-alert ${a[0]}">${esc(a[1])}</div>`).join('');}
-function raptRenderSess(){const box=$('rp_sess'),c=raptCfg(),name=$('i_name').value.trim()||'bez názvu';
+function raptRenderSess(){const box=$('rp_sess'),name=$('i_name').value.trim()||'bez názvu';
   if(RAPT_FORM){box.innerHTML='';return;}
   const e=raptShownEntry();
   if(!e){box.innerHTML=`<div class="rp-empty">Recept <b>${esc(name)}</b> zatím nemá várku napojenou na Pill.</div>`+
@@ -2613,22 +2693,23 @@ function raptRenderSess(){const box=$('rp_sess'),c=raptCfg(),name=$('i_name').va
   const others=currentLog.filter(x=>x.ferm&&x.id!==e.id);
   box.innerHTML=`<div class="rp-sessline"><b>${esc(name)}</b> · várka ${idx} (${fmtDate(e.date)||'bez data'}) · Pill <b>${esc(f.pname||'')}</b><br>`+
     `${f.to?'Sledováno':'Sledováno od'} ${fmtDT(f.from)}${f.to?' – '+fmtDT(f.to):' · <span class="rp-live-dot"></span> kvasí '+fmtDur(Date.now()-f.from)}`+
-    ` · ${f.pts.length} měření${f.synced?' · staženo '+fmtAgo(f.synced):''}</div>`+
+    ` · ${f.pts.length} měření${f.synced?' · staženo '+fmtAgo(f.synced):''}${calOf(f)?' · kalibrováno':''}${isOwn(f.pid)&&!f.to?' · hlídá server':''}</div>`+
     `<div class="rp-btns">`+
     (st?`<button class="btn" id="rp_og" type="button">Použít OG ${sg(st.og)}</button><button class="btn" id="rp_fg" type="button">Použít FG ${sg(st.cur)}</button>`:'')+
     (f.to?'':`<button class="btn rp-pri" id="rp_stop" type="button">Ukončit (stočeno)</button>`)+
     `<button class="btn" id="rp_edit" type="button">Upravit</button><button class="btn" id="rp_unlink" type="button" style="color:var(--bad)">Odpojit</button>`+
     (!raptActiveEntry()?`<button class="btn" id="rp_start" type="button"${raptReady()?'':' disabled'}>Nová várka</button>`:'')+`</div>`+
     (others.length?`<div class="rp-others">Další várky s Pillem: `+others.map(x=>`<button class="btn rp-pick" data-id="${esc(x.id)}" type="button">${fmtDate(x.date)||'bez data'}</button>`).join('')+'</div>':'');}
-function raptRenderChart(){const box=$('rp_chart'),statsBox=$('rp_stats'),e=raptShownEntry();
-  document.querySelectorAll('#rp_range .btn').forEach(b=>b.classList.toggle('on',b.dataset.r===RAPT_RANGE));
+function raptRenderChart(){const box=$('rp_chart'),statsBox=$('rp_stats'),e=raptShownEntry(),c=raptCfg();
+  document.querySelectorAll('#rp_range .btn[data-r]').forEach(b=>b.classList.toggle('on',b.dataset.r===RAPT_RANGE));
+  const sm=$('rp_smooth');if(sm)sm.checked=!!c.smooth;
   if(!e||!e.ferm.pts.length){box.innerHTML='<div class="rp-empty">'+(e?'Zatím žádná měření – po obnovení se tu objeví průběh.':'Graf se ukáže, až začneš sledovat kvašení várky.')+'</div>';statsBox.innerHTML='';return;}
   const f=e.ferm,all=raptSeries(f),st=raptStats(f),end=all[all.length-1].t;
   let P=RAPT_RANGE==='all'?all:all.filter(p=>p.t>=end-(+RAPT_RANGE)*864e5);if(P.length<2)P=all;
   if(P.length>700){const k=Math.ceil(P.length/700);P=P.filter((p,i)=>i%k===0||i===P.length-1);}
   // kreslí se ve skutečné šířce, aby popisky zůstaly čitelné i na telefonu
   const W=Math.max(300,Math.round(box.clientWidth||720)),H=W<520?230:280,l=W<520?44:52,r=W<520?34:44,t=14,b=28,t0=P[0].t,t1=Math.max(P[P.length-1].t,t0+36e5);
-  const gs=P.map(p=>p.g).concat(st.fgT>0?[st.fgT]:[]),gLo=Math.floor((Math.min(...gs)-0.002)*500)/500,gHi=Math.ceil((Math.max(...gs)+0.002)*500)/500;
+  const gs=P.map(p=>p.g).concat(c.smooth?P.map(p=>p.raw):[]).concat(st.fgT>0?[st.fgT]:[]),gLo=Math.floor((Math.min(...gs)-0.002)*500)/500,gHi=Math.ceil((Math.max(...gs)+0.002)*500)/500;
   const Ts=P.map(p=>p.T).filter(v=>!isNaN(v)),TLo=Math.floor(Math.min(...Ts)-1),THi=Math.ceil(Math.max(...Ts)+1);
   const X=v=>l+(v-t0)/(t1-t0)*(W-l-r),Yg=v=>t+(gHi-v)/(gHi-gLo)*(H-t-b),YT=v=>t+(THi-v)/(THi-TLo||1)*(H-t-b);
   let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Průběh hustoty a teploty">`;
@@ -2643,37 +2724,64 @@ function raptRenderChart(){const box=$('rp_chart'),statsBox=$('rp_stats'),e=rapt
   const yr=yeastTempRange();
   if(yr){const y1=YT(Math.min(THi,yr.hi)),y2=YT(Math.max(TLo,yr.lo));if(y2>y1)s+=`<rect x="${l}" y="${y1}" width="${W-l-r}" height="${y2-y1}" class="rp-tband"/>`;}
   s+=`<polyline class="rp-lT" points="${P.filter(p=>!isNaN(p.T)).map(p=>X(p.t).toFixed(1)+','+YT(p.T).toFixed(1)).join(' ')}"/>`;
+  if(c.smooth)s+=`<polyline class="rp-lR" points="${P.map(p=>X(p.t).toFixed(1)+','+Yg(p.raw).toFixed(1)).join(' ')}"/>`;
   s+=`<polyline class="rp-lG" points="${P.map(p=>X(p.t).toFixed(1)+','+Yg(p.g).toFixed(1)).join(' ')}"/>`;
+  if(st.peakT&&st.peakT>=t0&&st.peakT<=t1){const pp=P.reduce((a,p)=>Math.abs(p.t-st.peakT)<Math.abs(a.t-st.peakT)?p:a,P[0]);s+=`<circle cx="${X(pp.t)}" cy="${Yg(pp.g)}" r="3.5" class="rp-peak"/>`;}
   const lp=P[P.length-1];s+=`<circle cx="${X(lp.t)}" cy="${Yg(lp.g)}" r="4" class="rp-dot"/>`;
   s+=`<line id="rp_cross" x1="0" x2="0" y1="${t}" y2="${H-b}" class="rp-cross" visibility="hidden"/><circle id="rp_cdot" r="4" class="rp-dot" visibility="hidden"/></svg>`;
-  s+=`<div class="rp-legend"><span class="lg">— hustota</span><span class="lt">— teplota</span>${yr?'<span class="lb">▮ rozsah kvasnic</span>':''}</div><div class="rp-tip" id="rp_tip" hidden></div>`;
+  s+=`<div class="rp-legend"><span class="lg">— hustota${c.smooth?' (vyhlazená)':''}</span>${c.smooth?'<span class="lr">— měřeno</span>':''}<span class="lt">— teplota</span>${yr?'<span class="lb">▮ rozsah kvasnic</span>':''}${st.peakT?'<span class="lp">● nejrychlejší kvašení</span>':''}</div><div class="rp-tip" id="rp_tip" hidden></div>`;
   box.innerHTML=s;
   const svg=box.querySelector('svg'),tip=$('rp_tip'),cross=$('rp_cross'),cdot=$('rp_cdot');
   const move=ev=>{const rc=svg.getBoundingClientRect(),x=(ev.clientX-rc.left)/rc.width*W,tv=t0+(x-l)/(W-l-r)*(t1-t0);
     let best=P[0];for(const p of P)if(Math.abs(p.t-tv)<Math.abs(best.t-tv))best=p;
     cross.setAttribute('x1',X(best.t));cross.setAttribute('x2',X(best.t));cross.setAttribute('visibility','visible');
     cdot.setAttribute('cx',X(best.t));cdot.setAttribute('cy',Yg(best.g));cdot.setAttribute('visibility','visible');
-    tip.hidden=false;tip.textContent=fmtDT(best.t)+' · '+sg(best.g)+' · '+n1(best.T)+' °C';};
+    tip.hidden=false;tip.textContent=fmtDT(best.t)+' · '+sg(best.g)+' · '+n1(best.T)+' °C'+(best.tilt!=null&&!isNaN(best.tilt)?' · '+n1(best.tilt)+'°':'');};
   svg.addEventListener('pointermove',move);svg.addEventListener('pointerdown',move);
   svg.addEventListener('pointerleave',()=>{tip.hidden=true;cross.setAttribute('visibility','hidden');cdot.setAttribute('visibility','hidden');});
   let h='';
   h+=logStat('OG (Pill)',sg(st.og),LAST&&LAST.og>1?'plán '+sg(LAST.og):'');
-  h+=logStat('Teď',sg(st.cur),st.fgT>0?'cíl '+sg(st.fgT):'');
+  h+=logStat('Teď',sg(st.cur),(st.fgT>0?'cíl '+sg(st.fgT):'')+(st.cal?' · kalibr.':''));
   h+=logStat('Prokvašení',isNaN(st.att)?'–':n0(st.att)+' %','zdánlivé');
   h+=logStat('Alkohol',n1(st.abv)+' %','zatím');
   h+=logStat('Rychlost',isNaN(st.vel)?'–':(st.vel>0?'+':'')+n1(st.vel),'bodů / den (24 h)');
-  h+=logStat('Teplota',n1(st.tNow)+' °C','min '+n1(st.tMin)+' · max '+n1(st.tMax));
+  if(!isNaN(st.peak))h+=logStat('Nejrychleji',n1(st.peak),'b./den · '+fmtDT(st.peakT));
+  if(!isNaN(st.lag))h+=logStat('Rozjezd',fmtDur(st.lag),'do poklesu o 2 body');
+  h+=logStat('Teplota',n1(st.tNow)+' °C','min '+n1(st.tMin)+' · max '+n1(st.tMax)+' · ⌀ '+n1(st.tAvg));
   h+=logStat('Doba',fmtDur(st.last-f.from),st.n+' měření');
   if(st.stable)h+=logStat('Stav','dokvašeno','48 h beze změny','ok');
   else if(!isNaN(st.eta))h+=logStat('Odhad FG',new Date(st.eta).toLocaleDateString('cs-CZ'),'při dnešní rychlosti');
   statsBox.innerHTML=h;}
+function raptRenderCal(){const box=$('rp_cal');if(!box)return;const c=raptCfg(),L=curLive();
+  if(!raptReady()||!c.pid){box.innerHTML='<div class="rp-empty">Kalibrace je dostupná po připojení Pillu.</div>';return;}
+  const cal=c.cals[c.pid]||{pts:[],type:isOwn(c.pid)?'tilt':'lin',on:false},hasTilt=L&&L.tilt!=null&&!isNaN(+L.tilt);
+  const xName=cal.type==='tilt'?'Náklon (°)':'Pill ukazuje (SG)',xNow=L?(cal.type==='tilt'?(hasTilt?(+L.tilt).toFixed(2):''):(+L.sg).toFixed(4)):'';
+  let h=`<div class="rp-help">Změř vzorek hustoměrem (nebo refraktometrem s korekcí) a zapiš hodnotu spolu s tím, co zrovna ukazuje Pill. Z více bodů si plánovač spočítá opravnou křivku${isOwn(c.pid)?' – u vlastního přijímače přímo z náklonu Pillu, jako u iSpindelu (2 body = přímka, 3–4 = parabola, 5+ = kubika).':' (1 bod = posun, 2+ = přímka).'}</div>`;
+  h+=`<div class="fields"><div class="f" style="flex:1 1 150px"><label>Typ</label><select id="rp_cal_type">`+
+     `<option value="tilt"${cal.type==='tilt'?' selected':''}${isOwn(c.pid)?'':' disabled'}>Z náklonu (jen ESP32)</option><option value="lin"${cal.type==='lin'?' selected':''}>Oprava hustoty Pillu</option></select></div>`+
+     `<div class="f" style="flex:1 1 140px"><label>${xName}</label><input class="num" id="rp_cal_x" value="${xNow}"></div>`+
+     `<div class="f" style="flex:1 1 140px"><label>Hustoměr (SG)</label><input class="num" id="rp_cal_sg" placeholder="1.012"></div></div>`+
+     `<div class="rp-btns"><button class="btn rp-pri" id="rp_cal_add" type="button">Přidat bod</button>`+
+     `<label class="link solo" style="margin:0 0 0 6px"><input type="checkbox" id="rp_cal_on"${cal.on?' checked':''}${cal.coef?'':' disabled'}> Používat kalibraci</label></div>`;
+  if(cal.pts&&cal.pts.length){h+='<div class="rp-caltbl">'+cal.pts.map((p,i)=>{const fit=cal.coef?polyv(cal.coef,p.x):NaN;
+      return `<div class="rp-calrow"><span>${cal.type==='tilt'?n2(p.x)+'°':sg(p.x)}</span><span>→ <b>${sg(p.sg)}</b></span><span class="rp-calres">${isNaN(fit)?'':'křivka '+sg(fit)+' ('+(fit-p.sg>=0?'+':'')+((fit-p.sg)*1000).toFixed(1)+' b.)'}</span>`+
+        `<span>${p.t?new Date(p.t).toLocaleDateString('cs-CZ'):''}</span><button class="btn rp-cal-del" data-i="${i}" type="button" title="Smazat bod">✕</button></div>`;}).join('')+'</div>';
+    if(!cal.coef)h+='<div class="rp-msg">'+(cal.type==='tilt'?'Pro křivku z náklonu jsou potřeba aspoň 2 body.':'')+'</div>';}
+  box.innerHTML=h;}
+function raptRenderPush(){const box=$('rp_push');if(!box)return;const c=raptCfg(),s=srcReady();
+  const supported='serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
+  let h='<div class="rp-help">Server pošle upozornění i se zavřenou aplikací: dokvašeno, blízko cílové FG, teplota mimo rozsah kvasnic, slabá baterie, Pill (přijímač) se neozývá. Funguje pro várky z vlastního přijímače ESP32.</div>';
+  if(!s.own)h+='<div class="rp-msg">Nejdřív vyplň klíč vlastního serveru (výše).</div>';
+  else if(!supported)h+='<div class="rp-msg bad">Tady upozornění nejdou. Na iPhonu přidej aplikaci na plochu (Sdílet → Přidat na plochu) a otevři ji z ikony – potřeba je iOS 16.4 nebo novější.</div>';
+  else h+=`<div class="rp-btns">${c.push?'<button class="btn" id="rp_push_test" type="button">Poslat zkušební</button><button class="btn" id="rp_push_off" type="button">Vypnout upozornění</button>':'<button class="btn rp-pri" id="rp_push_on" type="button">Zapnout upozornění</button>'}</div>`;
+  h+='<div class="rp-msg" id="rp_push_msg"></div>';box.innerHTML=h;}
 
 // ---------- ovládání ----------
 function toLocalInput(ms){if(!ms)return '';const d=new Date(ms),z=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate())+'T'+z(d.getHours())+':'+z(d.getMinutes());}
 function raptOpenForm(e){RAPT_FORM=e?{id:e.id}:{id:null};const f=e&&e.ferm;
   let from=f?f.from:0;if(!from){const cand=currentLog.filter(x=>!x.ferm&&daysBetween(x.date,todayIso())<=10).sort((a,b)=>(b.date||'').localeCompare(a.date||''))[0];
     from=cand?new Date(cand.date+'T00:00:00').getTime():Date.now();}
-  $('rp_from').value=toLocalInput(from);$('rp_to').value=f&&f.to?toLocalInput(f.to):'';$('rp_off').value=f?(f.off?String(f.off):''):(raptCfg().off?String(raptCfg().off):'');
+  $('rp_from').value=toLocalInput(from);$('rp_to').value=f&&f.to?toLocalInput(f.to):'';$('rp_off').value=f&&f.off?String(f.off):'';
   $('rp_sess_form').hidden=false;raptRenderSess();}
 function raptCloseForm(){RAPT_FORM=null;$('rp_sess_form').hidden=true;raptRenderSess();}
 function raptSaveForm(){const c=raptCfg(),from=Date.parse($('rp_from').value),toV=$('rp_to').value?Date.parse($('rp_to').value):0,off=pn($('rp_off').value)||0;
@@ -2682,11 +2790,12 @@ function raptSaveForm(){const c=raptCfg(),from=Date.parse($('rp_from').value),to
   if(!e){const d=new Date(from),iso=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
     e=currentLog.filter(x=>!x.ferm&&x.date===iso)[0];
     if(!e){e={id:logUid(),date:iso,vol:String(+num($('i_batch').value,45).toFixed(1)),og:'',ogU:'sg',fg:'',fgU:'sg',wcf:'',pack:'',rating:'0',notes:''};currentLog.push(e);}}
-  const old=e.ferm;
-  e.ferm={pid:old?old.pid:c.pid,pname:old?old.pname:(c.pname||''),from,to:toV,off,pts:old?old.pts.filter(p=>p[0]>=from&&(!toV||p[0]<=toV)):[],synced:old?old.synced:0};
+  const old=e.ferm,pid=old?old.pid:c.pid,pname=old?old.pname:((c.pills||[]).find(p=>p.id===c.pid)||{}).name||c.pname||'';
+  e.ferm={pid,pname,from,to:toV,off,pts:old?old.pts.filter(p=>p[0]>=from&&(!toV||p[0]<=toV)):[],synced:old?old.synced:0};
+  const cal=c.cals[pid];if(cal&&cal.on&&cal.coef)e.ferm.cal=JSON.parse(JSON.stringify({type:cal.type,on:true,coef:cal.coef}));
   if(old&&from<old.from)e.ferm.pts=[];                                        // posun začátku dozadu → stáhnout znovu
-  c.off=off;raptSaveCfg();RAPT_SEL=e.id;RAPT_FORM=null;$('rp_sess_form').hidden=true;
-  renderLog();persistLog();raptRender();raptSync(true);}
+  RAPT_SEL=e.id;RAPT_FORM=null;$('rp_sess_form').hidden=true;
+  renderLog();persistLog();raptRender();raptWatch(e);raptSync(true);}
 function raptUse(which){const e=raptShownEntry();if(!e)return;const st=raptStats(e.ferm);if(!st)return;
   if(which==='og'){e.og=st.og.toFixed(3);e.ogU='sg';}else{e.fg=st.cur.toFixed(3);e.fgU='sg';}
   renderLog();persistLog();raptMsg('✓ '+(which==='og'?'OG':'FG')+' zapsána do várky ve varním deníku.','ok');}
@@ -2694,18 +2803,45 @@ async function raptStop(){const e=raptActiveEntry();if(!e)return;if(!confirm('Uk
   await raptSync(true);e.ferm.to=Date.now();if(!e.pack)e.pack=todayIso();
   const st=raptStats(e.ferm);if(st&&!e.fg&&confirm('Zapsat do várky FG '+sg(st.cur)+' z Pillu?')){e.fg=st.cur.toFixed(3);e.fgU='sg';}
   if(st&&!e.og&&confirm('Zapsat do várky OG '+sg(st.og)+' z Pillu?')){e.og=st.og.toFixed(3);e.ogU='sg';}
-  renderLog();persistLog();raptRender();}
+  renderLog();persistLog();raptRender();raptWatch(e);}
 function raptUnlink(){const e=raptShownEntry();if(!e)return;if(!confirm('Odpojit Pill od této várky? Stažený průběh kvašení se z várky smaže (várka samotná zůstane).'))return;
-  delete e.ferm;RAPT_SEL=null;renderLog();persistLog();raptRender();}
-function raptFillSetup(){const c=raptCfg();if(!$('rp_user'))return;$('rp_user').value=c.user||'';$('rp_secret').value=c.secret||'';$('rp_proxy').value=c.proxy||'';}
-async function raptConnect(){const c=raptCfg();c.user=$('rp_user').value.trim();c.secret=$('rp_secret').value.trim();c.proxy=$('rp_proxy').value.trim();
-  if(!c.user||!c.secret||!c.proxy){raptSetupMsg('Vyplň e-mail, API secret i adresu prostředníka.','bad');return;}
-  if(!/^https:\/\//.test(c.proxy)&&!/^http:\/\/localhost/.test(c.proxy)){raptSetupMsg('Adresa prostředníka musí začínat https://','bad');return;}
+  const f=e.ferm;delete e.ferm;RAPT_SEL=null;renderLog();persistLog();raptRender();
+  if(f&&isOwn(f.pid)&&!f.to)raptWatch({ferm:Object.assign({},f,{to:Date.now()})});}
+function raptFillSetup(){const c=raptCfg();if(!$('rp_user'))return;$('rp_user').value=c.user||'';$('rp_secret').value=c.secret||'';$('rp_proxy').value=c.proxy||'';$('rp_key').value=c.key||'';}
+async function raptConnect(){const c=raptCfg();c.user=$('rp_user').value.trim();c.secret=$('rp_secret').value.trim();c.proxy=$('rp_proxy').value.trim();c.key=$('rp_key').value.trim();
+  if(!c.proxy){raptSetupMsg('Vyplň adresu serveru (Cloudflare Worker).','bad');return;}
+  if(!/^https:\/\//.test(c.proxy)&&!/^http:\/\/localhost/.test(c.proxy)){raptSetupMsg('Adresa serveru musí začínat https://','bad');return;}
+  if(!(c.user&&c.secret)&&!c.key){raptSetupMsg('Vyplň přihlášení k RAPT (e-mail + API secret), klíč vlastního serveru, nebo obojí.','bad');return;}
   RAPT_TOKEN=null;raptSaveCfg();raptSetupMsg('Připojuji…','');
-  await raptSync(true);const ok=!!(raptCfg().live);
-  raptSetupMsg(ok?'✓ Připojeno – nalezeno Pillů: '+(raptCfg().pills||[]).length:($('rp_msg').textContent||'Připojení se nepodařilo.'),ok?'ok':'bad');}
-function raptForget(){if(!confirm('Smazat přihlašovací údaje k RAPT z tohoto zařízení? (Stažené průběhy u várek zůstanou.)'))return;
-  RAPT={};RAPT_TOKEN=null;raptSaveCfg();raptFillSetup();raptSetupMsg('Údaje smazány.','');raptRender();}
+  await raptSync(true);const n=(raptCfg().pills||[]).length,err=$('rp_msg').className.indexOf('bad')>=0;
+  raptSetupMsg(n?'✓ Připojeno – nalezeno Pillů: '+n+(err?' (část se nepovedla – viz hlášení nahoře)':''):($('rp_msg').textContent||'Zatím žádný Pill – u vlastního přijímače se objeví po prvním měření.'),n&&!err?'ok':(n?'':'bad'));}
+function raptForget(){if(!confirm('Smazat přihlašovací údaje k RAPT i klíč serveru z tohoto zařízení? (Stažené průběhy u várek i kalibrace zůstanou.)'))return;
+  const c=raptCfg();RAPT={cals:c.cals,smooth:c.smooth,lives:{}};RAPT_TOKEN=null;raptSaveCfg();raptFillSetup();raptSetupMsg('Údaje smazány.','');raptRender();}
+function raptGenKey(){const a=new Uint8Array(24);crypto.getRandomValues(a);const k=Array.from(a,b=>'abcdefghjkmnpqrstuvwxyz23456789'[b%31]).join('');
+  $('rp_key').value=k;raptSetupMsg('Klíč vygenerován – zkopíruj ho do Cloudflare (proměnná PIVO_KEY) a do nastaveni.h v ESP32, pak klepni Připojit.','');}
+function raptCalAdd(){const c=raptCfg(),type=$('rp_cal_type').value,x=pn($('rp_cal_x').value),g=pn($('rp_cal_sg').value);
+  if(!(g>0.98&&g<1.2)){alert('Zadej hustotu z hustoměru jako SG, např. 1.012.');return;}
+  if(isNaN(x)){alert(type==='tilt'?'Chybí náklon Pillu.':'Chybí hustota, kterou ukazuje Pill.');return;}
+  const cal=c.cals[c.pid]&&c.cals[c.pid].type===type?c.cals[c.pid]:{pts:[],type,on:false};
+  cal.pts.push({x:type==='tilt'?x:sgOf(x),sg:g,t:Date.now()});calFit(cal);if(cal.coef&&cal.pts.length===(type==='tilt'?2:1))cal.on=true;
+  c.cals[c.pid]=cal;raptSaveCfg();raptCalSync();}
+function raptCalSync(){const c=raptCfg(),cal=c.cals[c.pid];                  // kalibrace platí i pro rozběhnuté várky tohoto Pillu
+  currentLog.forEach(e=>{if(e.ferm&&e.ferm.pid===c.pid&&!e.ferm.to){if(cal&&cal.on&&cal.coef)e.ferm.cal={type:cal.type,on:true,coef:cal.coef};else delete e.ferm.cal;}});
+  const a=raptActiveEntry();if(a&&a.ferm.pid===c.pid){persistLog();raptWatch(a);}
+  raptRender();}
+async function raptPushOn(){const m=()=>$('rp_push_msg');try{
+  const perm=await Notification.requestPermission();if(perm!=='granted'){m().textContent='Upozornění nejsou povolená (Nastavení iPhonu → Oznámení).';return;}
+  const reg=await navigator.serviceWorker.ready,k=await ownFetch('/push/key');
+  const raw=atob(k.publicKey.replace(/-/g,'+').replace(/_/g,'/')+'==='.slice((k.publicKey.length+3)%4)),key=Uint8Array.from(raw,ch=>ch.charCodeAt(0));
+  const sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:key});
+  await ownFetch('/push/subscribe',sub.toJSON());const c=raptCfg();c.push=true;raptSaveCfg();raptRenderPush();$('rp_push_msg').textContent='✓ Upozornění zapnutá.';
+  const a=raptActiveEntry();if(a)raptWatch(a);
+}catch(e){m().textContent='Nepodařilo se zapnout: '+e.message;}}
+async function raptPushOff(){try{const reg=await navigator.serviceWorker.ready,sub=await reg.pushManager.getSubscription();
+  if(sub){await ownFetch('/push/unsubscribe',{endpoint:sub.endpoint}).catch(()=>{});await sub.unsubscribe();}}catch(e){}
+  const c=raptCfg();c.push=false;raptSaveCfg();raptRenderPush();}
+async function raptPushTest(){try{const r=await ownFetch('/push/test',{});$('rp_push_msg').textContent=r.sent?'✓ Odesláno ('+r.sent+').':'Server nemá žádné přihlášené zařízení – vypni a znovu zapni upozornění.';}
+  catch(e){$('rp_push_msg').textContent=e.message;}}
 // řádek ve varním deníku u várky s Pillem
 function raptLogLine(e){const f=e.ferm;if(!f)return '';const st=f.pts.length?raptStats(f):null;
   return `<div class="lferm"><span>📈 RAPT Pill${f.to?'':' · kvasí'}</span>${st?`<b>${sg(st.cur)}</b><b>${n1(st.tNow)} °C</b><span>${fmtDur(st.last-f.from)} · ${st.n} měření</span>`:'<span>zatím bez měření</span>'}`+
@@ -2714,15 +2850,25 @@ function raptLogLine(e){const f=e.ferm;if(!f)return '';const st=f.pts.length?rap
 (function raptInit(){if(!$('p_kvaseni'))return;
   const c=raptCfg();if(!c.proxy&&typeof RAPT_PROXY_DEFAULT==='string')c.proxy=RAPT_PROXY_DEFAULT;
   raptFillSetup();
-  $('rp_connect').addEventListener('click',raptConnect);$('rp_forget').addEventListener('click',raptForget);
+  $('rp_connect').addEventListener('click',raptConnect);$('rp_forget').addEventListener('click',raptForget);$('rp_genkey').addEventListener('click',raptGenKey);
   $('rp_refresh').addEventListener('click',()=>raptSync(true));
-  $('rp_pill').addEventListener('change',e=>{const c=raptCfg();c.pid=e.target.value;const p=(c.pills||[]).find(x=>x.id===c.pid);c.pname=p?p.name:'';c.live=null;raptSaveCfg();raptSync(true);});
+  $('rp_pill').addEventListener('change',e=>{const c=raptCfg();c.pid=e.target.value;const p=(c.pills||[]).find(x=>x.id===c.pid);c.pname=p?p.name:'';raptSaveCfg();raptRender();raptSync(true);});
   $('rp_sess_save').addEventListener('click',raptSaveForm);$('rp_sess_cancel').addEventListener('click',raptCloseForm);
   $('rp_sess').addEventListener('click',ev=>{const b=ev.target.closest('button');if(!b)return;
     if(b.id==='rp_start')raptOpenForm(null);else if(b.id==='rp_edit')raptOpenForm(raptShownEntry());else if(b.id==='rp_stop')raptStop();
     else if(b.id==='rp_unlink')raptUnlink();else if(b.id==='rp_og')raptUse('og');else if(b.id==='rp_fg')raptUse('fg');
     else if(b.classList.contains('rp-pick')){RAPT_SEL=b.dataset.id;raptRender();}});
-  $('rp_range').addEventListener('click',ev=>{const b=ev.target.closest('.btn');if(!b)return;RAPT_RANGE=b.dataset.r;raptRenderChart();});
+  $('rp_range').addEventListener('click',ev=>{const b=ev.target.closest('.btn[data-r]');if(!b)return;RAPT_RANGE=b.dataset.r;raptRenderChart();});
+  $('rp_smooth').addEventListener('change',ev=>{const c=raptCfg();c.smooth=ev.target.checked;raptSaveCfg();raptRender();});
+  $('rp_cal').addEventListener('click',ev=>{const b=ev.target.closest('button');if(!b)return;const c=raptCfg();
+    if(b.id==='rp_cal_add')raptCalAdd();
+    else if(b.classList.contains('rp-cal-del')){const cal=c.cals[c.pid];if(cal){cal.pts.splice(+b.dataset.i,1);calFit(cal);if(!cal.coef)cal.on=false;raptSaveCfg();raptCalSync();}}});
+  $('rp_cal').addEventListener('change',ev=>{const c=raptCfg();
+    if(ev.target.id==='rp_cal_on'){const cal=c.cals[c.pid];if(cal){cal.on=ev.target.checked&&!!cal.coef;raptSaveCfg();raptCalSync();}}
+    else if(ev.target.id==='rp_cal_type'){const cal=c.cals[c.pid];if(cal&&cal.pts.length&&!confirm('Změnou typu se smažou dosavadní kalibrační body. Pokračovat?')){ev.target.value=cal.type;return;}
+      c.cals[c.pid]={pts:[],type:ev.target.value,on:false};raptSaveCfg();raptCalSync();}});
+  $('rp_push').addEventListener('click',ev=>{const b=ev.target.closest('button');if(!b)return;
+    if(b.id==='rp_push_on')raptPushOn();else if(b.id==='rp_push_off')raptPushOff();else if(b.id==='rp_push_test')raptPushTest();});
   $('log_list').addEventListener('click',ev=>{const b=ev.target.closest('.log-ferm');if(!b)return;RAPT_SEL=b.dataset.id;gotoTab('kvaseni');raptRender();raptSync(false);});
   $('tabs').addEventListener('click',ev=>{const b=ev.target.closest('.tab');if(b&&b.textContent==='Kvašení')setTimeout(()=>{raptRender();raptSync(false);},0);});
   setInterval(()=>{if(document.visibilityState==='visible'&&$('p_kvaseni').classList.contains('active'))raptSync(false);},60e3);
