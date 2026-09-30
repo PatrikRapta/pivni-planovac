@@ -2530,6 +2530,9 @@ const sgOf=g=>{g=+g;return g>2?g/1000:g;};                                  // R
 function raptMsg(t,cls){const m=$('rp_msg');if(m){m.textContent=t||'';m.className='rp-msg'+(cls?' '+cls:'');}}
 function raptSetupMsg(t,cls){const m=$('rp_setup_msg');if(m){m.textContent=t||'';m.className='rp-msg'+(cls?' '+cls:'');}}
 function curLive(){const c=raptCfg();return c.lives[c.pid]||null;}
+// přibližná kapacita článku Li-ion podle napětí v klidu (0 % = 3,30 V, kde se přijímač vypne)
+function rxPct(v){const T=[[3.30,0],[3.45,8],[3.60,20],[3.70,35],[3.80,50],[3.90,64],[4.00,78],[4.10,90],[4.20,100]];
+  if(!(v>0))return NaN;if(v<=T[0][0])return 0;for(let i=1;i<T.length;i++)if(v<=T[i][0]){const a=T[i-1],b=T[i];return a[1]+(v-a[0])/(b[0]-a[0])*(b[1]-a[1]);}return 100;}
 
 // ---------- cloud RAPT ----------
 async function raptToken(force){
@@ -2676,7 +2679,7 @@ function raptRenderLive(){const c=raptCfg(),L=curLive(),box=$('rp_live'),empty=$
   const yr=yeastTempRange();$('rp_trange').textContent=yr?'kvasnice '+n0(yr.lo)+'–'+n0(yr.hi)+' °C':'';
   $('rp_vel').textContent=L.vel==null||isNaN(+L.vel)?'–':(+L.vel>0?'+':'')+n1(+L.vel);
   $('rp_batt').textContent=isNaN(L.batt)?'–':n0(L.batt);
-  $('rp_rssi').textContent=(L.rssi?'signál '+n0(L.rssi)+' dBm':'')+(L.tilt!=null&&!isNaN(+L.tilt)?(L.rssi?' · ':'')+'náklon '+n1(+L.tilt)+'°':'')+(L.rxv>0?' · přijímač '+n2(L.rxv)+' V':'');
+  $('rp_rssi').textContent=(L.rssi?'signál '+n0(L.rssi)+' dBm':'')+(L.tilt!=null&&!isNaN(+L.tilt)?(L.rssi?' · ':'')+'náklon '+n1(+L.tilt)+'°':'')+(L.rxv>0?' · přijímač '+n2(L.rxv)+' V ('+n0(rxPct(L.rxv))+' %)':'');
   $('rp_age').textContent=L.at?'měřeno '+fmtAgo(L.at)+(L.src==='own'?' · ESP32':' · RAPT'):'';
   const A=[],st=e&&e.ferm&&e.ferm.pts.length?raptStats(e.ferm):null;
   if(st&&st.stable)A.push(['ok','Hustota se 48 h nemění (±0,5 bodu) – pivo je nejspíš dokvašené. Můžeš stáčet nebo začít s chmelením za studena.']);
@@ -2684,7 +2687,7 @@ function raptRenderLive(){const c=raptCfg(),L=curLive(),box=$('rp_live'),empty=$
   if(yr&&!isNaN(L.temp)){if(L.temp>yr.hi+0.5)A.push(['warn','Teplota '+n1(L.temp)+' °C je nad rozsahem kvasnic ('+n0(yr.lo)+'–'+n0(yr.hi)+' °C) – hrozí estery a fuzely.']);
     else if(L.temp<yr.lo-0.5)A.push(['warn','Teplota '+n1(L.temp)+' °C je pod rozsahem kvasnic ('+n0(yr.lo)+'–'+n0(yr.hi)+' °C) – kvašení se může zpomalit.']);}
   if(L.batt>0&&L.batt<20)A.push(['warn','Baterie Pillu je na '+n0(L.batt)+' % – nabij ho před další várkou.']);
-  if(L.rxv>0&&L.rxv<3.5)A.push(['warn','Článek bateriového přijímače má '+n2(L.rxv)+' V – nabij ho přes USB-C (pod 3,30 V se přijímač vypne).']);
+  if(L.rxv>0&&L.rxv<3.5)A.push(['warn','Článek bateriového přijímače má '+n2(L.rxv)+' V (asi '+n0(rxPct(L.rxv))+' %) – nabij ho přes USB-C (pod 3,30 V se přijímač vypne).']);
   if(L.at&&Date.now()-L.at>3*36e5)A.push(['bad','Pill se naposledy ozval '+fmtAgo(L.at)+(L.src==='own'?' – je přijímač ESP32 zapnutý a v dosahu?':' – je v dosahu Wi-Fi / mostu?')]);
   $('rp_alerts').innerHTML=A.map(a=>`<div class="rp-alert ${a[0]}">${esc(a[1])}</div>`).join('');}
 function raptRenderSess(){const box=$('rp_sess'),name=$('i_name').value.trim()||'bez názvu';
