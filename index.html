@@ -2584,7 +2584,7 @@ async function raptSync(manual){
       catch(e){errs.push('RAPT: '+e.message);}}
     if(s.own){try{const list=await ownFetch('/pills');
       (Array.isArray(list)?list:[]).forEach(p=>{const id='own:'+p.mac,L=p.last||{};pills.push({id,name:(p.name||p.mac)+' (ESP32)',src:'own'});
-        c.lives[id]={sg:+L.sg,temp:+L.temp,vel:L.vel,batt:+L.batt,rssi:L.rssi,tilt:L.tilt,at:+L.ts||0,src:'own'};});}
+        c.lives[id]={sg:+L.sg,temp:+L.temp,vel:L.vel,batt:+L.batt,rssi:L.rssi,tilt:L.tilt,rxv:+L.rxv||0,at:+L.ts||0,src:'own'};});}
       catch(e){errs.push('ESP32: '+e.message);}}
     if(pills.length){c.pills=pills;if(!pills.some(p=>p.id===c.pid)){c.pid=pills[0].id;c.pname=pills[0].name;}}
     raptSaveCfg();
@@ -2676,7 +2676,7 @@ function raptRenderLive(){const c=raptCfg(),L=curLive(),box=$('rp_live'),empty=$
   const yr=yeastTempRange();$('rp_trange').textContent=yr?'kvasnice '+n0(yr.lo)+'–'+n0(yr.hi)+' °C':'';
   $('rp_vel').textContent=L.vel==null||isNaN(+L.vel)?'–':(+L.vel>0?'+':'')+n1(+L.vel);
   $('rp_batt').textContent=isNaN(L.batt)?'–':n0(L.batt);
-  $('rp_rssi').textContent=(L.rssi?'signál '+n0(L.rssi)+' dBm':'')+(L.tilt!=null&&!isNaN(+L.tilt)?(L.rssi?' · ':'')+'náklon '+n1(+L.tilt)+'°':'');
+  $('rp_rssi').textContent=(L.rssi?'signál '+n0(L.rssi)+' dBm':'')+(L.tilt!=null&&!isNaN(+L.tilt)?(L.rssi?' · ':'')+'náklon '+n1(+L.tilt)+'°':'')+(L.rxv>0?' · přijímač '+n2(L.rxv)+' V':'');
   $('rp_age').textContent=L.at?'měřeno '+fmtAgo(L.at)+(L.src==='own'?' · ESP32':' · RAPT'):'';
   const A=[],st=e&&e.ferm&&e.ferm.pts.length?raptStats(e.ferm):null;
   if(st&&st.stable)A.push(['ok','Hustota se 48 h nemění (±0,5 bodu) – pivo je nejspíš dokvašené. Můžeš stáčet nebo začít s chmelením za studena.']);
@@ -2684,6 +2684,7 @@ function raptRenderLive(){const c=raptCfg(),L=curLive(),box=$('rp_live'),empty=$
   if(yr&&!isNaN(L.temp)){if(L.temp>yr.hi+0.5)A.push(['warn','Teplota '+n1(L.temp)+' °C je nad rozsahem kvasnic ('+n0(yr.lo)+'–'+n0(yr.hi)+' °C) – hrozí estery a fuzely.']);
     else if(L.temp<yr.lo-0.5)A.push(['warn','Teplota '+n1(L.temp)+' °C je pod rozsahem kvasnic ('+n0(yr.lo)+'–'+n0(yr.hi)+' °C) – kvašení se může zpomalit.']);}
   if(L.batt>0&&L.batt<20)A.push(['warn','Baterie Pillu je na '+n0(L.batt)+' % – nabij ho před další várkou.']);
+  if(L.rxv>0&&L.rxv<3.5)A.push(['warn','Článek bateriového přijímače má '+n2(L.rxv)+' V – nabij ho přes USB-C (pod 3,30 V se přijímač vypne).']);
   if(L.at&&Date.now()-L.at>3*36e5)A.push(['bad','Pill se naposledy ozval '+fmtAgo(L.at)+(L.src==='own'?' – je přijímač ESP32 zapnutý a v dosahu?':' – je v dosahu Wi-Fi / mostu?')]);
   $('rp_alerts').innerHTML=A.map(a=>`<div class="rp-alert ${a[0]}">${esc(a[1])}</div>`).join('');}
 function raptRenderSess(){const box=$('rp_sess'),name=$('i_name').value.trim()||'bez názvu';
