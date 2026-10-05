@@ -883,7 +883,7 @@ html[data-theme="dark"] ::-webkit-scrollbar-thumb{background:linear-gradient(90d
     <div class="card" id="rp_live_card"><h2>Živě z RAPT Pill</h2>
       <div id="rp_live_empty" class="rp-empty">Připoj svůj RAPT Pill níže – uvidíš tu okamžitou hustotu, teplotu, baterii a rychlost kvašení.</div>
       <div id="rp_live" hidden>
-        <div class="rp-livehead"><select id="rp_pill" aria-label="Vybraný Pill"></select>
+        <div class="rp-livehead"><select id="rp_pill" aria-label="Vybraný Pill"></select><button class="btn" id="rp_rename" type="button" title="Přejmenovat Pill z přijímače" hidden>✎</button>
           <span class="rp-age" id="rp_age"></span>
           <button class="btn" id="rp_refresh" type="button">↻ Obnovit</button></div>
         <div class="metrics rp-metrics">
@@ -2589,7 +2589,7 @@ async function raptSync(manual){
       (Array.isArray(list)?list:[]).forEach(p=>{const id='own:'+p.mac,L=p.last||{};pills.push({id,name:(p.name||p.mac)+' (ESP32)',src:'own'});
         c.lives[id]={sg:+L.sg,temp:+L.temp,vel:L.vel,batt:+L.batt,rssi:L.rssi,tilt:L.tilt,rxv:+L.rxv||0,at:+L.ts||0,src:'own'};});}
       catch(e){errs.push('ESP32: '+e.message);}}
-    if(pills.length){c.pills=pills;if(!pills.some(p=>p.id===c.pid)){c.pid=pills[0].id;c.pname=pills[0].name;}}
+    if(pills.length){c.pills=pills;if(!pills.some(p=>p.id===c.pid))c.pid=pills[0].id;c.pname=(pills.find(p=>p.id===c.pid)||{}).name||c.pname;}
     raptSaveCfg();
     const e=raptActiveEntry();
     if(e&&e.ferm.pid){const f=e.ferm,now=Date.now();
@@ -2670,7 +2670,7 @@ function raptRenderLive(){const c=raptCfg(),L=curLive(),box=$('rp_live'),empty=$
   else if(!L)empty.textContent='Připojeno. Klepni na „Obnovit" nebo počkej na první načtení.';
   if(!has)return;
   const sel=$('rp_pill'),pills=c.pills&&c.pills.length?c.pills:[{id:c.pid,name:c.pname||'Pill'}];
-  sel.innerHTML=pills.map(p=>`<option value="${esc(p.id)}"${p.id===c.pid?' selected':''}>${esc(p.name)}</option>`).join('');
+  sel.innerHTML=pills.map(p=>`<option value="${esc(p.id)}"${p.id===c.pid?' selected':''}>${esc(p.name)}</option>`).join('');$('rp_rename').hidden=!isOwn(c.pid);
   const e=raptShownEntry(),fe=e&&e.ferm&&e.ferm.pid===c.pid?e.ferm:null,cal=fe?calOf(fe):calOf({pid:c.pid}),off=fe?(+fe.off||0):0;
   const g=calApply(cal,L.sg,L.tilt)+off;
   $('rp_sg').textContent=g>0.9?sg(g):'–';
@@ -2860,6 +2860,11 @@ function raptLogLine(e){const f=e.ferm;if(!f)return '';const st=f.pts.length?rap
   document.querySelectorAll('.rp-eye').forEach(b=>b.addEventListener('click',()=>{const i=$(b.dataset.for),show=i.type==='password';i.type=show?'text':'password';b.textContent=show?'Skrýt':'Zobrazit';}));
   $('rp_connect').addEventListener('click',raptConnect);$('rp_forget').addEventListener('click',raptForget);$('rp_genkey').addEventListener('click',raptGenKey);
   $('rp_refresh').addEventListener('click',()=>raptSync(true));
+  $('rp_rename').addEventListener('click',async()=>{const c=raptCfg();if(!isOwn(c.pid))return;
+    const cur=((c.pills||[]).find(p=>p.id===c.pid)||{}).name||'',nn=prompt('Nový název Pillu:',cur.replace(/ \(ESP32\)$/,''));
+    if(nn==null||!nn.trim())return;
+    try{await ownFetch('/name',{mac:c.pid.slice(4),name:nn.trim().slice(0,60)});}catch(e){raptMsg(e.message,'bad');return;}
+    raptSync(true);});
   $('rp_pill').addEventListener('change',e=>{const c=raptCfg();c.pid=e.target.value;const p=(c.pills||[]).find(x=>x.id===c.pid);c.pname=p?p.name:'';raptSaveCfg();raptRender();raptSync(true);});
   $('rp_sess_save').addEventListener('click',raptSaveForm);$('rp_sess_cancel').addEventListener('click',raptCloseForm);
   $('rp_sess').addEventListener('click',ev=>{const b=ev.target.closest('button');if(!b)return;
