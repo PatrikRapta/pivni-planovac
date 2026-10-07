@@ -618,6 +618,12 @@ html[data-theme="dark"] ::-webkit-scrollbar-thumb{background:linear-gradient(90d
 .rp-livehead{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
 .rp-livehead select{flex:1 1 180px;max-width:300px}
 .rp-age{color:var(--muted);font-size:12.5px;margin-right:auto}
+.rp-rx{margin-top:10px;font-size:12px;color:var(--muted);line-height:1.5}
+.rp-rx button{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;cursor:pointer;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:2px}
+.rp-rx button:hover,.rp-rx button:focus-visible{color:var(--text)}
+.rp-rx.off{color:var(--text)}
+.modal .rx-steps{margin:0;padding-left:20px;font-size:13.5px;line-height:1.55}
+.modal .rx-steps li{margin-bottom:8px}
 .rp-metrics{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}
 .rp-sub{font-size:11.5px;opacity:.72;margin-top:3px;color:var(--board-cap)}
 .rp-alerts{display:flex;flex-direction:column;gap:6px;margin-top:12px}
@@ -711,7 +717,7 @@ html[data-theme="dark"] ::-webkit-scrollbar-thumb{background:linear-gradient(90d
   body{background-attachment:scroll}
   .page.active{animation:none}
 }
-/* Raptorka Pilulka – scéna v záhlaví (jen tmavý motiv) a prázdný stav Kvašení */
+/* ilustrace raptorky (maskot přijímače) – scéna v záhlaví (jen tmavý motiv) a prázdný stav Kvašení */
 .head-scene{display:none}
 html[data-theme="dark"] .head-scene{display:block;height:124px;margin:-18px -6px -17px 10px;flex:0 0 auto;align-self:flex-end;position:relative;z-index:1}
 @media(max-width:700px){html[data-theme="dark"] .head-scene{display:none}}
@@ -900,6 +906,7 @@ html[data-theme="dark"] .head-scene{display:block;height:124px;margin:-18px -6px
           <div class="metric"><div class="cap">Baterie</div><div class="val"><span id="rp_batt">–</span><span class="u">%</span></div><div class="rp-sub" id="rp_rssi"></div></div>
         </div>
         <div class="rp-alerts" id="rp_alerts"></div>
+        <div class="rp-rx" id="rp_rx" hidden></div>
       </div>
       <div class="rp-msg" id="rp_msg"></div>
     </div>
@@ -1180,6 +1187,28 @@ html[data-theme="dark"] .head-scene{display:block;height:124px;margin:-18px -6px
     </div>
     <div class="hint">Klepni na etiketu, kterou chceš přiřadit k tomuto receptu.</div>
     <div id="lblpick_grid" class="lblgrid"></div>
+  </div>
+</div>
+
+<div class="modal" id="rxhelpmodal">
+  <div class="box" style="width:min(560px,94vw)">
+    <div class="mrow"><strong style="font-family:'Fraunces',serif;font-size:16px">Vypnutí a zapnutí přijímače</strong>
+      <button class="btn" id="rxhelp_close" type="button">Zavřít</button>
+    </div>
+    <div><strong>Vypnutí, když přijímač nemá síť</strong>
+      <ol class="rx-steps" style="margin-top:6px">
+        <li>Špendlíkem stiskni <b>RESET</b> (otvor <b>R</b> na boku u konektoru baterie) a pusť.</li>
+        <li>Do 3 sekund stiskni <b>FLASH</b> (otvor <b>F</b> na protějším boku).</li>
+        <li>Na displeji se objeví „VYPNUTO“.</li>
+      </ol>
+    </div>
+    <div class="hint">FLASH nedrž při stisku RESET – deska by přešla do režimu nahrávání programu. Pak stačí znovu stisknout RESET.</div>
+    <div><strong>Zapnutí</strong>
+      <div style="font-size:13.5px;line-height:1.55;margin-top:4px">Stiskni <b>RESET</b>. Přijímač začne hledat Pill od začátku (naučit se interval Pillu mu trvá až asi dva jeho intervaly).</div>
+    </div>
+    <div><strong>Nouzově</strong>
+      <div style="font-size:13.5px;line-height:1.55;margin-top:4px">Otevři magnetické víčko a odpoj konektor článku.</div>
+    </div>
   </div>
 </div>
 
@@ -2522,7 +2551,7 @@ function persistLog(){const name=$('i_name').value.trim(),hint=$('log_hint');con
 // 2) vlastní server (Cloudflare Worker + přijímač ESP32 chytající Bluetooth vysílání Pillu, Zdrojak/esp32-pill).
 // Měření se ukládají k várce ve varním deníku (e.ferm), takže jsou v knihovně, v exportu .pivo i offline.
 const RAPT_KEY='pivo_rapt_v1';
-let RAPT=null,RAPT_TOKEN=null,RAPT_LAST_SYNC=0,RAPT_BUSY=false,RAPT_RANGE='all',RAPT_SEL=null,RAPT_FORM=null;
+let RAPT=null,RAPT_TOKEN=null,RAPT_LAST_SYNC=0,RAPT_BUSY=false,RAPT_RANGE='all',RAPT_SEL=null,RAPT_FORM=null,RAPT_RX=null;
 function raptCfg(){if(!RAPT){try{RAPT=JSON.parse(kvGet(RAPT_KEY))||{};}catch(e){RAPT={};}}
   if(!RAPT.lives)RAPT.lives={};if(!RAPT.cals)RAPT.cals={};if(RAPT.smooth===undefined)RAPT.smooth=true;
   if(RAPT.live&&RAPT.pid&&!RAPT.lives[RAPT.pid]){RAPT.lives[RAPT.pid]=RAPT.live;delete RAPT.live;}   // starší uložení
@@ -2595,7 +2624,8 @@ async function raptSync(manual){
     if(s.own){try{const list=await ownFetch('/pills');
       (Array.isArray(list)?list:[]).forEach(p=>{const id='own:'+p.mac,L=p.last||{};pills.push({id,name:(p.name||p.mac)+' (ESP32)',src:'own'});
         c.lives[id]={sg:+L.sg,temp:+L.temp,vel:L.vel,batt:+L.batt,rssi:L.rssi,tilt:L.tilt,rxv:+L.rxv||0,at:+L.ts||0,src:'own'};});}
-      catch(e){errs.push('ESP32: '+e.message);}}
+      catch(e){errs.push('ESP32: '+e.message);}
+      await raptRxLoad();}
     if(pills.length){c.pills=pills;if(!pills.some(p=>p.id===c.pid))c.pid=pills[0].id;c.pname=(pills.find(p=>p.id===c.pid)||{}).name||c.pname;}
     raptSaveCfg();
     const e=raptActiveEntry();
@@ -2670,6 +2700,29 @@ async function raptWatch(e){const c=raptCfg();if(!e||!e.ferm||!isOwn(e.ferm.pid)
     tlo:yr?yr.lo:0,thi:yr?yr.hi:0,off:+f.off||0,cal:calOf(f)});}catch(err){raptMsg('Hlídání na serveru se nepodařilo nastavit: '+err.message,'bad');}}
 
 // ---------- vykreslení ----------
+// ---------- vypnutí bateriového přijímače (server /rx, příkaz si přijímač vyzvedne při dalším spojení) ----------
+async function raptRxLoad(){if(!srcReady().own)return;
+  try{const a=await ownFetch('/rx');RAPT_RX=Array.isArray(a)?a:null;}catch(e){RAPT_RX=null;}}   // starší server /rx nezná → řádek se prostě nezobrazí
+function raptRxFor(){const c=raptCfg();if(!isOwn(c.pid)||!Array.isArray(RAPT_RX))return null;
+  const nm=s=>String(s||'').toLowerCase().replace(/[^0-9a-f]/g,''),m=nm(c.pid.slice(4));let b=null;
+  RAPT_RX.forEach(r=>{if(r&&r.id&&nm(r.pill)===m&&(!b||(+r.seen||0)>(+b.seen||0)))b=r;});return b;}
+function raptRenderRx(){const box=$('rp_rx');if(!box)return;
+  const L=curLive(),r=L&&L.src==='own'?raptRxFor():null;
+  if(!r){box.hidden=true;box.innerHTML='';box.classList.remove('off');return;}
+  const hlp='<button type="button" data-rx="help">Raptorka není připojená k síti?</button>';let h;
+  if(r.state==='off'){const ts=+r.state_ts;
+    h='Přijímač vypnutý ('+(r.how==='local'?'tlačítkem':'z aplikace')+(ts?' '+esc(fmtDT(ts)):'')+') · zapnout: tlačítko RESET · '+hlp;}
+  else if(r.cmd==='off'){const t=+r.cmd_ts,hm=t?new Date(t).toLocaleTimeString('cs-CZ',{hour:'2-digit',minute:'2-digit'}):'';
+    h='Vypnutí čeká na přijímač'+(hm?' (zadáno '+esc(hm)+')':'')+' · <button type="button" data-rx="cancel">Zrušit</button>';}
+  else h='<button type="button" data-rx="off">Vypnout přijímač</button> · '+hlp;
+  box.classList.toggle('off',r.state==='off');box.innerHTML=h;box.hidden=false;}
+async function raptRxCmd(cmd){const r=raptRxFor();if(!r)return;
+  try{await ownFetch('/rx/cmd',{rx:r.id,cmd:cmd});}catch(e){raptMsg(e.message,'bad');return;}
+  await raptRxLoad();raptRenderRx();
+  raptMsg(cmd==='off'?'✓ Vypnutí naplánováno – přijímač ho vyzvedne při dalším spojení se serverem.':'✓ Vypnutí zrušeno.','ok');}
+function raptRxOff(){if(!raptRxFor())return;
+  if(!confirm('Přijímač se vypne při příštím spojení se serverem – obvykle do 15 minut. Zapnout ho půjde jen tlačítkem RESET na krabičce (otvor R). Vypnout?'))return;
+  raptRxCmd('off');}
 function raptRender(){if(!$('p_kvaseni'))return;raptRenderLive();raptRenderSess();raptRenderChart();raptRenderCal();raptRenderPush();}
 function raptRenderLive(){const c=raptCfg(),L=curLive(),box=$('rp_live'),empty=$('rp_live_empty');
   const has=raptReady()&&L;box.hidden=!has;empty.hidden=!!has;const ei=$('rp_live_img');if(ei)ei.hidden=!!has;
@@ -2696,7 +2749,8 @@ function raptRenderLive(){const c=raptCfg(),L=curLive(),box=$('rp_live'),empty=$
   if(L.batt>0&&L.batt<20)A.push(['warn','Baterie Pillu je na '+n0(L.batt)+' % – nabij ho před další várkou.']);
   if(L.rxv>0&&L.rxv<3.5)A.push(['warn','Článek bateriového přijímače má '+n2(L.rxv)+' V (asi '+n0(rxPct(L.rxv))+' %) – nabij ho přes USB-C (pod 3,30 V se přijímač vypne).']);
   if(L.at&&Date.now()-L.at>3*36e5)A.push(['bad','Pill se naposledy ozval '+fmtAgo(L.at)+(L.src==='own'?' – je přijímač ESP32 zapnutý a v dosahu?':' – je v dosahu Wi-Fi / mostu?')]);
-  $('rp_alerts').innerHTML=A.map(a=>`<div class="rp-alert ${a[0]}">${esc(a[1])}</div>`).join('');}
+  $('rp_alerts').innerHTML=A.map(a=>`<div class="rp-alert ${a[0]}">${esc(a[1])}</div>`).join('');
+  raptRenderRx();}
 function raptRenderSess(){const box=$('rp_sess'),name=$('i_name').value.trim()||'bez názvu';
   if(RAPT_FORM){box.innerHTML='';return;}
   const e=raptShownEntry();
@@ -2867,6 +2921,10 @@ function raptLogLine(e){const f=e.ferm;if(!f)return '';const st=f.pts.length?rap
   document.querySelectorAll('.rp-eye').forEach(b=>b.addEventListener('click',()=>{const i=$(b.dataset.for),show=i.type==='password';i.type=show?'text':'password';b.textContent=show?'Skrýt':'Zobrazit';}));
   $('rp_connect').addEventListener('click',raptConnect);$('rp_forget').addEventListener('click',raptForget);$('rp_genkey').addEventListener('click',raptGenKey);
   $('rp_refresh').addEventListener('click',()=>raptSync(true));
+  $('rp_rx').addEventListener('click',ev=>{const b=ev.target.closest('button[data-rx]');if(!b)return;
+    if(b.dataset.rx==='off')raptRxOff();else if(b.dataset.rx==='cancel')raptRxCmd(null);else if(b.dataset.rx==='help')$('rxhelpmodal').classList.add('open');});
+  $('rxhelp_close').addEventListener('click',()=>$('rxhelpmodal').classList.remove('open'));
+  $('rxhelpmodal').addEventListener('click',e=>{if(e.target.id==='rxhelpmodal')$('rxhelpmodal').classList.remove('open');});
   $('rp_rename').addEventListener('click',async()=>{const c=raptCfg();if(!isOwn(c.pid))return;
     const cur=((c.pills||[]).find(p=>p.id===c.pid)||{}).name||'',nn=prompt('Nový název Pillu:',cur.replace(/ \(ESP32\)$/,''));
     if(nn==null||!nn.trim())return;
