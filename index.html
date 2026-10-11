@@ -717,7 +717,7 @@ html[data-theme="dark"] ::-webkit-scrollbar-thumb{background:linear-gradient(90d
   body{background-attachment:scroll}
   .page.active{animation:none}
 }
-/* ilustrace raptorky (maskot přijímače) – scéna v záhlaví (jen tmavý motiv) a prázdný stav Kvašení */
+/* ilustrace raptulky (maskot přijímače) – scéna v záhlaví (jen tmavý motiv) a prázdný stav Kvašení */
 .head-scene{display:none}
 html[data-theme="dark"] .head-scene{display:block;height:124px;margin:-18px -6px -17px 10px;flex:0 0 auto;align-self:flex-end;position:relative;z-index:1}
 @media(max-width:700px){html[data-theme="dark"] .head-scene{display:none}}
@@ -1198,11 +1198,11 @@ html[data-theme="dark"] .head-scene{display:block;height:124px;margin:-18px -6px
     <div><strong>Vypnutí, když přijímač nemá síť</strong>
       <ol class="rx-steps" style="margin-top:6px">
         <li>Špendlíkem stiskni <b>RESET</b> (otvor <b>R</b> na boku u konektoru baterie) a pusť.</li>
-        <li>Do 3 sekund stiskni <b>FLASH</b> (otvor <b>F</b> na protějším boku).</li>
+        <li>Hned znovu stiskni <b>RESET</b> a pusť. Dva stisky rychle za sebou (do 3 sekund) přijímač vypnou.</li>
         <li>Na displeji se objeví „VYPNUTO“.</li>
       </ol>
     </div>
-    <div class="hint">FLASH nedrž při stisku RESET – deska by přešla do režimu nahrávání programu. Pak stačí znovu stisknout RESET.</div>
+    <div class="hint"><b>Jiný způsob:</b> místo druhého stisku RESET stiskni do 3 sekund <b>FLASH</b> (otvor <b>F</b> na protějším boku). FLASH nedrž při stisku RESET – deska by přešla do režimu nahrávání programu. Pak stačí znovu stisknout RESET.</div>
     <div><strong>Zapnutí</strong>
       <div style="font-size:13.5px;line-height:1.55;margin-top:4px">Stiskni <b>RESET</b>. Přijímač začne hledat Pill od začátku (naučit se interval Pillu mu trvá až asi dva jeho intervaly).</div>
     </div>
@@ -2709,7 +2709,7 @@ function raptRxFor(){const c=raptCfg();if(!isOwn(c.pid)||!Array.isArray(RAPT_RX)
 function raptRenderRx(){const box=$('rp_rx');if(!box)return;
   const L=curLive(),r=L&&L.src==='own'?raptRxFor():null;
   if(!r){box.hidden=true;box.innerHTML='';box.classList.remove('off');return;}
-  const hlp='<button type="button" data-rx="help">Raptorka není připojená k síti?</button>';let h;
+  const hlp='<button type="button" data-rx="help">Raptulka není připojená k síti?</button>';let h;
   if(r.state==='off'){const ts=+r.state_ts;
     h='Přijímač vypnutý ('+(r.how==='local'?'tlačítkem':'z aplikace')+(ts?' '+esc(fmtDT(ts)):'')+') · zapnout: tlačítko RESET · '+hlp;}
   else if(r.cmd==='off'){const t=+r.cmd_ts,hm=t?new Date(t).toLocaleTimeString('cs-CZ',{hour:'2-digit',minute:'2-digit'}):'';
